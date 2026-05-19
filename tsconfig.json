@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "typeRoots": ["./packages/imports/sys/dev_modules/@types"],
+    "target": "ESNext",
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
+    "checkJs": false,
+    "sourceMap": false,
+    "composite": false,
+    "strict": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["**/*"],
+  "exclude": [
+    "_exclude",
+    "node_modules",
+    "local_modules",
+    "dist",
+    "gen",
+    "**/*.test.*",
+    "packages/*/lib",
+    "packages/*/modules",
+    "packages/*/imports",
+    "packages/imports"
+  ]
+}

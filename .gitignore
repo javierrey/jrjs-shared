@@ -1,0 +1,42 @@
+.*/
+.*.*
+
+_ignore/
+node_modules/
+local_modules/
+gen/
+cache/
+dist/
+bin/
+logs/
+temp/
+
+/packages/*/lib/
+/packages/*/modules/
+
+*.cache*
+*.*.map
+*.min.*
+*.tmp
+*.bak
+*.log
+*.zip
+*.tgz
+*.exe
+
+package-lock.json
+yarn.lock
+*.tsbuildinfo
+
+.DS_Store*
+.Spotlight-V*
+.Trashes
+[Tt]humbs.db
+ehthumbs.db
+
+!/.github/
+!.storybook/
+
+# !_exclude
+# !_local_modules/**/*
+# !*/*.zip

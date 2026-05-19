@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <title>Index</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="keywords" content=""/>
+  <meta name="description" content=""/>
+  <base href="./"/>
+  <link rel="icon" href="data:"/>
+  <!--link rel="stylesheet" href="./index.html.css"/-->
+  <!--script type="module" src="./index.html.js"></script-->
+  <style>
+    /* @import "./lib/view/view-x.css"; /* hide, use <link> */
+    /* * */
+    :root {
+      /* Predefined: */
+      --con-base: 16;
+      /* Define: */
+      --htm-base: 14;
+      --htm-font: sans-serif;
+      --htm-line: 1.5;
+      --htm-overflow: hidden auto;
+      /* Calculate: */
+      --htm-factor: calc(var(--htm-base) / var(--con-base));
+      --htm-size: calc(var(--htm-base) * 1px);
+      --htm-stroke: calc(1 / var(--con-base) * 1rem);
+      /* Colors: */
+      --htm-col-trans: rgba(128, 128, 128, 0);
+      --htm-col-light: #dddddd;
+      --htm-col-dark: #222222;
+      /* Light: */
+      --htm-coll-back: var(--htm-col-light);
+      --htm-coll-fore: var(--htm-col-dark);
+      /* Dark: */
+      --htm-cold-back: var(--htm-col-dark);
+      --htm-cold-fore: var(--htm-col-light);
+      /* Themed: */
+      --htm-colt-back: var(--htm-coll-back);
+      --htm-colt-fore: var(--htm-coll-fore);
+      /* * */
+    }
+    /* * */
+    html { font-family: var(--htm-font); font-size: var(--htm-size); line-height: var(--htm-line); }
+    body { margin: 0; overflow: var(--htm-overflow); }
+    body, input, select, button, textarea {
+      background-color: var(--htm-colt-back); color: var(--htm-colt-fore); font-family: var(--htm-font); font-size: 1rem;
+    }
+    a { color: var(--htm-colt-fore); text-decoration: none; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: var(--htm-col-trans); }
+    *:focus { outline: 0; }
+    table { border: none; border-collapse: collapse; }
+    td { padding: 0; vertical-align: top; }
+    fieldset { border: none; margin: 0; padding: 0; }
+    hr { background-color: var(--htm-colt-fore); color: var(--htm-colt-fore); height: var(--htm-stroke); border: none; }
+    /* * */
+    select, button, input, textarea { border-width: 1px; }
+    a, select, button, input { cursor: pointer; }
+    input[type="text"], input[type="password"], input[type="search"], input[type="url"], input[type="email"], input[type="number"], input[type="tel"] {
+      cursor: initial; user-select: initial;
+    }
+    textarea { resize: none; overflow: auto; user-select: initial; }
+    /* * */
+    .display-none { display: none; } .display-block { display: block; } .display-inline { display: inline; } .display-inline-block { display: inline-block; }
+    .display-flex { display: flex; } .display-grid { display: grid; } .display-table { display: table; }
+    .display-transparent { opacity: 0; } .display-opaque { opacity: 1; }
+    .display-off { position: absolute; overflow: hidden; width: 1px; height: 1px; padding: 0; border: 0; margin: -1px; clip: rect(1px, 1px, 1px, 1px); }
+    .flex-row { flex-direction: row; } .flex-column { flex-direction: column; }
+    .justify-center { justify-content: center; } .justify-start { justify-content: flex-start; } .justify-end { justify-content: flex-end; }
+    .align-center { align-items: center; } .align-start { align-items: flex-start; } .align-end { align-items: flex-end; }
+    /* * */
+    @keyframes kf-fade-in { 0% { opacity: auto; } 100% { opacity: 1; } }
+    .fade-in { animation: kf-fade-in 1s linear forwards; }
+    @keyframes kf-fade-out { 0% { opacity: auto; } 100% { opacity: 0; } }
+    .fade-out { animation: kf-fade-out 1s linear forwards; }
+    @keyframes kf-spin-right { 0% { rotate: 0deg; } 100% { rotate: 359deg; } }
+    .spin-right { animation: kf-spin-right 2s linear infinite; }
+    @keyframes kf-spin-left { 0% { rotate: 0deg; } 100% { rotate: -359deg; } }
+    .spin-left { animation: kf-spin-left 2s linear infinite; }
+    /* * */
+  </style>
+  <script>// _@ts-check 'use strict'; // import * as view from './lib/view/view-x.js';
+    const ge = (id) => document.getElementById(id);
+    const gt = (tag, el = document) => el?.getElementsByTagName?.(tag);
+    const qs = (sel, el = document) => { try { return el?.querySelector?.(sel); } catch {} };
+    const qa = (sel, el = document) => { try { return el?.querySelectorAll?.(sel); } catch {} };
+  </script>
+  <script type="module">// _@ts-check 'use strict';
+    (function ready(...args) {
+      if (!document.body) return setTimeout(ready, 50, ...args);
+      // ready
+    })();
+  </script>
+</head><body bgcolor="#808080">
+</body></html>

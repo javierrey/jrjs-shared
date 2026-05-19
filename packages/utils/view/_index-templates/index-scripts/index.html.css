@@ -1,0 +1,9 @@
+/* index-scripts/index.html.css */
+
+/* @import "./lib/view/view-x.css"; /* hide, use <link> */
+
+/* * */
+
+.big-text { font-size: calc(var(--htm-size) * 2); }
+
+/* * */

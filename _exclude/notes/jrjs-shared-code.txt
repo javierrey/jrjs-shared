@@ -1,0 +1,114 @@
+----------------------------------------------------------
+jrjs-shared-code.txt
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+
+import viewX_css from './view-x.css' with { type: 'css' };
+
+document.adoptedStyleSheets.push(viewX_css);
+
+---------------------------------
+
+/** Dynamically import a module returning its default export or a JSON file if type is 'json'. */
+export const importFile = async (url, type) => (await (type ? import(url, { with: { type } }) : import(url))).default;
+
+----------------------------------------------------------
+// sys.js, original:
+
+export const getAllFiles = async function* (folder) {
+  folder = (folder.replace(/\\/g, '/') + '/').replace(/\/\/+/g, '/');
+  const items = await fsP.readdir(folder, { withFileTypes: true });
+  for (const item of items) {
+    const path = folder + item.name;
+    if (item.isDirectory()) { yield* getAllFiles(path);
+    } else { yield path; }
+  }
+};
+
+----------------------------------------------------------
+// core.js:
+
+/**
+Basic log functionality wrapping up `console`.
+constructor (function):
+  ...args: any list of arguments.
+  return: void.
+static (object):
+  level: 0 muted, 1 error, 2 warn, 3 info, 4 debug.
+  indent: -1, 0, 2, ... Indent stringified output objects, -1 to skip `stringify`.
+  trace: undefined, false, true. Append the stack trace to the output.
+If trace is undefined, only error and debug levels show the trace.
+**/
+export const log = Object.assign(
+  (...args) => { // constructor
+    if (!log.level) { return; }
+    const method = log._methods.includes(args[0]) ? args.shift() : log._methods[0];
+    const header = console[method], main = console.log, footer = console.trace; // eslint-disable-line
+    const trace = log.trace || (log.trace !== false && [log._methods[1], log._methods[4]].includes(method));
+    const mi = args.findIndex((a) => a?.constructor === String), msg = mi > -1 ? args.splice(mi, 1)[0] : '';
+    const logArg = (a) => {
+      if (log.indent > -1 && [a, ...(a?.some ? a : [])].some((v) => v?.constructor === Object)) {
+        try { a = JSON.stringify(a, null, log.indent).replace(/(\\\\|\\[ntfv])+/g, ' '); }
+        catch (_) {}
+      }
+      main(a);
+    };
+    header(`[${method.toUpperCase()} ${new Date().toISOString()}] ${msg}`);
+    args.forEach(logArg);
+    trace && footer();
+  },
+  { // static
+    get constructor() { return log; },
+    level: 2,
+    indent: 0,
+    trace: undefined,
+    get _methods() { return ['log', 'error', 'warn', 'info', 'debug']; },
+    get error() { return (...args) => log.level >= 1 && log(log._methods[1], ...args); },
+    get warn() { return (...args) => log.level >= 2 && log(log._methods[2], ...args); },
+    get info() { return (...args) => log.level >= 3 && log(log._methods[3], ...args); },
+    get debug() { return (...args) => log.level >= 4 && log(log._methods[4], ...args); },
+  }
+);
+
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+// core-x.js
+
+/** Date conversions **/
+
+/**
+Converts a date to a short fixed-length numeric string that is human-readable.
+Usage: `numericDateString('2024-02-25T06:59:59.999Z') // '240225065959.999'`
+**/
+export const numericDateString = (date = new Date()) => {
+  const year = date.getFullYear() % 100;
+  const stry = String(year < 0 ? 100 + year : year).slice(-2).padStart(2, '0');
+  const isod = date.toISOString().slice(year < 0 ? 1 : 0);
+  const strd = isod.slice(isod.indexOf('-') + 1).replace(/\D/g, '');
+  return stry + strd.slice(0, 10) + '.' + strd.slice(10).padEnd(3, '0');
+};
+
+/**
+Converts a numeric date string generated with `numericDateString` to a date.
+The short year is completed as the closest full year to the current date.
+Usage: `numericStringDate('240225065959.999') // '2024-02-25T06:59:59.999Z'`
+**/
+export const numericStringDate = (s) => {
+  const cy = new Date().getFullYear(), fy = Math.floor(cy / 100) * 100 + Number(s.slice(0, 2)), py = fy - 100;
+  const ny = fy - cy < cy - py ? fy : py, ys = ny < 0 ? '-' : '';
+  const sy = ys + String(Math.abs(ny)).padStart(ny < 0 ? 6 : 4, '0');
+  const strd = `${sy}-${s.slice(2, 4)}-${s.slice(4, 6)}T${s.slice(6, 8)}:${s.slice(8, 10)}:${s.slice(10)}Z`;
+  return new Date(strd);
+};
+
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------

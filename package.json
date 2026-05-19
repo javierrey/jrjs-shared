@@ -1,0 +1,37 @@
+{
+  "name": "jrjs-shared",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "description": "jrjs shared library modules",
+  "author": "JR <javier.rey.eu@gmail.com> (https://javierrey.github.io)",
+  "workspaces": [
+    "packages/*"
+  ],
+  "main": "",
+  "scripts": {
+    "status": "echo CLEAN: && git clean -nfdX -e !.* -e !**/_ignore/ -e !**/_ignore/** -e !local_modules/ -e !local_modules/** && echo NEW: && git ls-files -o --exclude-standard",
+    "clean": "git clean -fdX -e !.* -e !**/_ignore/ -e !**/_ignore/** -e !local_modules/ -e !local_modules/**",
+    "reinstall": "npm run clean && npm install",
+    "format:lib": "npx eslint ./packages/lib",
+    "format:utils": "npx eslint ./packages/utils",
+    "format": "npm run format:lib && npm run format:utils",
+    "test:lib": "npm -w packages/lib run test",
+    "test:utils": "npm -w packages/utils run test",
+    "test": "npm run test:lib && npm run test:utils"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "_ignore": {
+    "local_modules": {
+      "dependencies": {},
+      "devDependencies": {
+        "@types/node": "./local_modules/dev_modules/@types/node",
+        "electron": "./local_modules/dev_modules/electron_modules/electron",
+        "minify": "./local_modules/dev_modules/min_modules/minify",
+        "minify-xml": "./local_modules/dev_modules/min_modules/minify_xml"
+      }
+    }
+  }
+}

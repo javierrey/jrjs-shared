@@ -1,0 +1,31 @@
+import { Observable } from '../Observable.js';
+import { argsOrArgArray } from '../util/argsOrArgArray.js';
+import { OperatorSubscriber } from '../operators/OperatorSubscriber.js';
+import { noop } from '../util/noop.js';
+import { innerFrom } from './innerFrom.js';
+export function onErrorResumeNext(...sources) {
+    const nextSources = argsOrArgArray(sources);
+    return new Observable((subscriber) => {
+        let sourceIndex = 0;
+        const subscribeNext = () => {
+            if (sourceIndex < nextSources.length) {
+                let nextSource;
+                try {
+                    nextSource = innerFrom(nextSources[sourceIndex++]);
+                }
+                catch (err) {
+                    subscribeNext();
+                    return;
+                }
+                const innerSubscriber = new OperatorSubscriber(subscriber, undefined, noop, noop);
+                nextSource.subscribe(innerSubscriber);
+                innerSubscriber.add(subscribeNext);
+            }
+            else {
+                subscriber.complete();
+            }
+        };
+        subscribeNext();
+    });
+}
+//# sourceMappingURL=onErrorResumeNext.js.map

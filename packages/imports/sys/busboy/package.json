@@ -1,0 +1,10 @@
+{
+  "name": "busboy",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {}
+}

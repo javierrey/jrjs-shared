@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <title>Index-lib</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="keywords" content=""/>
+  <meta name="description" content=""/>
+  <base href="./"/>
+  <link rel="icon" href="data:"/>
+  <!--link rel="stylesheet" href="./index.html.css"/-->
+  <!--script type="module" src="./index.html.js"></script-->
+  <link rel="stylesheet" href="./lib/view/view.css"/>
+  <link rel="stylesheet" href="./lib/view/view-x.css"/>
+  <style>
+    /* @import "./lib/view-x.css"; /* hide, use <link> */
+    .big-text { font-size: calc(var(--htm-size) * 2); }
+  </style>
+  <script type="module">// _@ts-check 'use strict';
+    import {
+      ge, gt, qs, qa,
+    } from './lib/view/view-x.js';
+    //
+    (function ready(...args) {
+      if (!document.body) return setTimeout(ready, 50, ...args);
+      console.log(` view qs: ` + qs('#some-id')?.innerHTML); // ready
+    })();
+  </script>
+</head><body bgcolor="#808080">
+  <div id="some-id" style="width: 100%;" class="display-flex justify-center big-text">Hello, world!</div>
+</body></html>

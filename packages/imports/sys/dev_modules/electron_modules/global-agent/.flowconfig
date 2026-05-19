@@ -1,0 +1,3 @@
+[ignore]
+.*/electron_modules/.*/test/.*
+<PROJECT_ROOT>/dist/.*

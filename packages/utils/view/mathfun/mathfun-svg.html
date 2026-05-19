@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <title>MathFun-SVG</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+  <meta name="mobile-web-app-capable" content="yes"/><meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="keywords" content=""/>
+  <meta name="description" content=""/>
+  <base href="./"/>
+  <link rel="icon" href="data:"/>
+  <!--link rel="stylesheet" href="./main/main.css"/-->
+  <!--script _type="module" src="./main/main.js"></script-->
+  <link rel="stylesheet" href="../../lib/view/view.css"/>
+  <style>
+  /* @import "../view.css"; /* hide, use <link> */
+  /* * */
+  :root {
+    /* Colors: */
+    --htm-col-grey-50: rgba(128, 128, 128, 0.5);
+    --htm-col-grey-25: rgba(128, 128, 128, 0.25);
+    /* Light: */
+    --svg-coll-stroke-hi: #222222;
+    --svg-coll-stroke-me: #aaaaaa;
+    --svg-coll-stroke-lo: #cccccc;
+    --svg-coll-stroke-1: #004488;
+    --svg-coll-stroke-2: #882200;
+    /* Dark: */
+    --svg-cold-stroke-hi: #dddddd;
+    --svg-cold-stroke-me: #555555;
+    --svg-cold-stroke-lo: #333333;
+    --svg-cold-stroke-1: #22ddff;
+    --svg-cold-stroke-2: #ff4422;
+    /* Themed: */
+    --svg-colt-back: var(--htm-coll-back);
+    --svg-colt-fore: var(--htm-coll-fore);
+    --svg-colt-stroke-hi: var(--svg-coll-stroke-hi);
+    --svg-colt-stroke-me: var(--svg-coll-stroke-me);
+    --svg-colt-stroke-lo: var(--svg-coll-stroke-lo);
+    --svg-colt-stroke-1: var(--svg-coll-stroke-1);
+    --svg-colt-stroke-2: var(--svg-coll-stroke-2);
+    /**/
+  }
+  #panelSvg {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: 'hidden';
+    aspect-ratio: 16 / 9;
+    display: block;
+  }
+  #captionDiv {
+    margin: 1px;
+    width: calc(100% - 2px);
+    height: 1.75rem;
+    overflow: hidden;
+    padding-block-start: 2px;
+    padding-inline: 0.5rem;
+    background-color: var(--htm-col-grey-50);
+    font-family: monospace;
+  }
+  #aspect-input {
+    width: 3.5rem;
+  }
+  #zoom-input {
+    width: 6.5rem;
+  }
+  #point-input {
+    width: 13.5rem;
+  }
+  .text-input {
+    margin: 1px;
+    height: 1.75rem;
+    text-align: center;
+    border: solid 1px #888888;
+    padding-inline: 0;
+    overflow: hidden;
+    font-family: monospace;
+  }
+  label {
+    margin: 1px;
+    padding-block-start: 2px;
+    padding-inline-start: 5px;
+    user-select: none;
+  }
+  .field-textarea {
+    width: calc(100% - 2px);
+    height: 7.25rem;
+    min-height: 1.75rem;
+    margin: 1px;
+    resize: vertical;
+    font-family: monospace;
+  }
+  .char-button {
+    margin: 1px;
+    width: 1.75rem;
+    height: 1.75rem;
+    text-align: center;
+    border: solid 1px #888888;
+    border-radius: 6px;
+    padding-inline: 0;
+    overflow: hidden;
+    font-family: sans-serif;
+  }
+  .selected-back { background-color: var(--htm-col-grey-50); }
+  .half-selected-back { background-color: var(--htm-col-grey-25); }
+  .margin-block-start { margin-block-start: 8px; }
+  </style>
+  <script type="module">// _@ts-check 'use strict';
+  import { MathFun } from '../../core/mathfun.js';
+  import {
+    delay, when, debounce, parse,
+    ge, qs, qa, CSSUtil,
+  } from '../view-x.js';
+  import {
+    addCross, addSvgGrid, addSvgPaths, addSvgText, clearContainer, getViewBox, getViewRect, isPathData, setSvgView,
+    roundText, rectCenter, rangeRect, rangeDomain, scaleRect, setViewField,
+  } from './mathfun-svg.js';
+  const lo = {}, go = globalThis; // typeof global === 'undefined' ? self : global
+  const log = console.log; // eslint-disable-line
+  // log('local', lo);
+
+  // core/client:
+
+  const stringifyObject = (obj) => {
+    if (!obj || !(obj.constructor === Object || !obj.constructor)) {
+      return String(obj);
+    }
+    const entries = Object.entries(obj);
+    if (!entries.length) { return '{}'; }
+    let str = '{';
+    entries.forEach(([k, v]) => {
+      const s = JSON.stringify(v)
+        .replace(/\{(?!\s)/g, '{ ').replace(/,(?!\s)/g, ', ')
+        .replace(/":(?!\s)/g, '": ').replace(/(?<!\s)\}/g, ' }');
+      str += `\n  "${k}": ${s},`
+    });
+    str = str.slice(0, -1) + '\n}';
+    return str;
+  };
+
+  const getPointer = (ev, /** @type {Element | null} */ parent = null) => {
+    const pointerEv = ev.touches?.length ? ev.touches[0] : ev;
+    let x = pointerEv.clientX, y = pointerEv.clientY;
+    if (parent) { const rect = parent.getBoundingClientRect(); x -= rect.left; y -= rect.top; }
+    return [x, y];
+  };
+
+  const unn = (n) => !n && n !== 0; // undefined, null, NaN, ...
+
+  const setSelectedStyle = (field, styleClass, addClass = 'selected-back') => {
+    const selected = 'selected-back', halfSelected = 'half-selected-back';
+    const buttons = qs('.field-buttons', field), button = styleClass ? qs(`.${styleClass}`, field) : null;
+    const enabled = button?.classList.contains(selected) || button?.classList.contains(halfSelected);
+    [...buttons.children].forEach((child) => child.classList.remove(selected, halfSelected));
+    (enabled || addClass === selected) && button?.classList.add(addClass);
+  };
+
+  // svg:
+
+  const svgProps = {
+    paths: [], cartesian: true, aspectMode: 'fit', minAspect: 1, maxAspect: 5,
+    domain: [-5.2, -3.2, 5.2, 3.2],
+  };
+  let unique = 0;
+  let scheduleRenderSvgId = 0;
+
+  const getIdNumber = (id) => Number(id.replace(/^.*-/, '')) || 0;
+  const getButtonField = (evel) => evel.currentTarget?.parentNode?.parentNode ?? evel;
+
+  const addField = (fieldObject = {}) => {
+    fieldObject.expression ??= 'x';
+    fieldObject.domain ??= [];
+    fieldObject.attr ??= {};
+    fieldObject.attr.stroke ??= '#999999';
+    !fieldObject.domain.length && fieldObject.domain.push(-2, 2);
+    const functions = fieldObject?.functions ?? {};
+    for (const fun in functions) { functions[fun] = String(functions[fun]); }
+    /** @type {Element | null} */ const form = ge('formDiv');
+    const field = document.createElement('div');
+    field.id = `field-${++unique}`;
+    field.classList.add('display-flex', 'margin-block-start');
+    const textarea = document.createElement('textarea');
+    textarea.name = 'field-textarea';
+    textarea.classList.add('field-textarea');
+    textarea.value = stringifyObject(fieldObject);
+    textarea.addEventListener('input', fieldChange);
+    const buttons = document.createElement('div');
+    buttons.classList.add('field-buttons');
+
+    const renderButton = document.createElement('button');
+    renderButton.append(String(unique).slice(-3));
+    renderButton.onclick = renderButtonClick;
+    renderButton.classList.add('render-button', 'display-block', 'char-button');
+    renderButton.style.color = fieldObject.attr.stroke;
+    buttons.append(renderButton);
+
+    field.append(textarea);
+    field.append(buttons);
+    form?.insertAdjacentElement('afterbegin', field)
+    return field;
+  };
+
+  const updateSvgProps = (props = {}) => {
+    const selectedRef = 'selected-back'; svgProps.svg ??= ge('panelSvg');
+    /** @type {object} */ const yScaleEl = ge('aspect-input'), /** @type {object} */ domEl = ge('zoom-input');
+    props.domain ??= svgProps.domain; props.pointer ??= svgProps.pointer;
+    props.scaleY = Number(yScaleEl.value) || 1;
+    props.scaleY === 1 ? yScaleEl.classList.remove(selectedRef) : yScaleEl.classList.add(selectedRef);
+    if (!props.pointer?.length && props.domain?.length) { props.pointer = rectCenter(props.domain); }
+    if (domEl.value.trim().length < 5 && props.pointer) {
+      domEl.value = `[${roundText([(props.domain[3] - props.domain[1]) / 2, ...props.pointer])}]`;
+    }
+    props.zoomDomain = domEl.value.replace(/[\s[\]]/g, '').split(',').map(Number);
+    props.zoom = domEl.classList.contains('selected-back') ? svgProps.zoom || 1 : 0;
+    Object.assign(svgProps, props);
+  };
+
+  const getSvgPointerCoords = (/** @type {number[]} */ [pointerX, pointerY]) => {
+    const svg = svgProps.svg, scaleX = svgProps.scaleX || 1, scaleY = svgProps.scaleY || 1;
+    const sbox = scaleRect(svgProps.box, 1 / scaleX, 1 / scaleY);
+    const width = svg.clientWidth, height = svg.clientHeight;
+    pointerX /= width; pointerY /= height;
+    if (svgProps.cartesian) { pointerY = 1 - pointerY; }
+    const coordX = sbox[0] + pointerX * sbox[2], coordY = sbox[1] + pointerY * sbox[3];
+    return [coordX, coordY];
+  };
+
+  const updatePointerCross = (/** @type {number[] | null} */ pointer = null) => {
+    if (pointer) { svgProps.pointer = getSvgPointerCoords(pointer); }
+    const name = 'svg-pointer-cross', cross = qa(`[name="${name}"]`, svgProps.svg); cross.forEach((el) => el.remove());
+    const span = 2 * Math.max(svgProps.box[2], svgProps.box[3]) * Math.max(Math.abs(svgProps.scaleX), Math.abs(svgProps.scaleY));
+    svgProps.pointer && addCross(
+      svgProps.svg, svgProps.pointer[0], svgProps.pointer[1] * svgProps.scaleY, span, 'var(--svg-colt-stroke-hi)', '2,2', 1, name
+    );
+  };
+
+  const updateCaption = (message = '') => {
+    /** @type {object} */ const cap = ge('captionDiv'); clearContainer(cap);
+    const { svg, domain, scaleX, scaleY, gridUnit, pointer } = svgProps;
+    if (!message) {
+      message ||= `
+        G:${svgProps.paths.length}, U:${gridUnit}, S:(${roundText([scaleX, scaleY])}),
+        D:[${roundText(domain)}], P:(${roundText(pointer)}),
+      `.replace(/\s+/g, ' ').trim().replace(/,$/, '');
+    }
+    const size = 1 / 120; addSvgText(svg, message, size, domain[0], domain[1], 'var(--svg-colt-fore)');
+    cap.insertAdjacentHTML('beforeend', `<div>${message}</div>\n`);
+  };
+
+  const renderSvg = () => {
+    updateSvgProps(); const svg = svgProps.svg; clearContainer(svg);
+    const paths = svgProps.paths; // if (!paths.length) { svgProps.zoom = 0; updateCaption(); return; }
+    const { domain, box, scaleX, scaleY } = setSvgView(svgProps);
+    const gridArgs = Object.values({
+      svg, box, scaleX, scaleY,
+      stroke: svgProps.stroke || 'var(--svg-colt-stroke-me)',
+      lowStroke: svgProps.lowStroke || 'var(--svg-colt-stroke-lo)',
+      highStroke: svgProps.highStroke || 'var(--svg-colt-stroke-hi)',
+    });
+    const { gridUnit } = addSvgGrid(...gridArgs);
+    updateSvgProps({ domain, box, scaleX, scaleY, gridUnit, zoom: 0 });
+    addSvgPaths(svg, paths, scaleX, scaleY);
+    updatePointerCross();
+    updateCaption();
+  };
+
+  const scheduleRenderSvg = () => {
+    clearTimeout(scheduleRenderSvgId);
+    scheduleRenderSvgId = setTimeout(renderSvg);
+  };
+
+  const zoomOnSvgPointer = (pointer, out = false, into = false) => {
+    svgProps.zoom = out && into ? 1 : out ? 1.333 : .75;
+    const radius = svgProps.zoom * (svgProps.domain[2] - svgProps.domain[0]) / 2;
+    const center = getSvgPointerCoords(pointer);
+    /** @type {object} */ const domEl = ge('zoom-input');
+    domEl.value = `[${roundText([radius, ...center])}]`;
+    domEl.classList.add('selected-back');
+    setViewField(svgProps.svg, [center[0], center[1], svgProps.zoom * svgProps.svg.clientWidth, svgProps.zoom * svgProps.svg.clientHeight]);
+    svgProps.domain = getViewRect(svgProps.svg);
+    refreshPaths();
+    scheduleRenderSvg();
+  };
+
+  const unsetPath = (id) => {
+    const index = svgProps.paths.findIndex((/** @type {object} */ p) => p.id === id);
+    index > -1 && svgProps.paths.splice(index, 1);
+  };
+
+  const variableDomain = (/** @type {number[]} */ [l, b, r, _], v = 'x') => [{ [v]: l }, { [v]: unn(r) ? b : r }];
+
+  const getVariablesDomain = (vars, domain = [], variables = {}) => {
+    let mainVar = null; vars = Object.assign({}, vars);
+    Object.entries(vars).forEach(([k, v]) => [undefined, null, NaN].includes(v) && (mainVar ??= k) && delete vars[k]);
+    mainVar ||= Object.keys(variables).filter((k) => !(k in vars))[0] || 'x';
+    const startEnd = variableDomain(domain, mainVar);
+    Object.assign(startEnd[0], vars);
+    return startEnd;
+  };
+
+  const addPath = (evel) => {
+    const field = getButtonField(evel), button = evel?.currentTarget ?? evel;
+    const id = `path-${getIdNumber(field.id)}`, textarea = qs('textarea', field); let path = {};
+    setSelectedStyle(field, 'render-button');
+    try {
+      path = JSON.parse(textarea.value.replaceAll('\n', ' ').trim()) ?? {};
+      const { functions: pf, constants: pc, variables: pv } = path;
+      for (const v in (pf ?? {})) { typeof pf[v] === 'string' && (pf[v] = parse(pf[v])); }
+      for (const v in (pc ?? {})) { typeof pc[v] === 'string' && (pc[v] = parse(pc[v])); }
+      for (const v in (pv ?? {})) { typeof pv[v] === 'string' && (pv[v] = parse(pv[v])); }
+    } catch (er) { updateCaption(`${id}: ${er?.message || er}`); return; }
+    const scaleX = path.scaleX, scaleY = path.scaleY;
+    const expression = path.expression ?? '', attr = path.attr ?? {}, domain = svgProps.domain;
+    button.style.color = attr.stroke ?? '';
+    if (expression.constructor === String && !isPathData(expression)) {
+      const options = { functions: path.functions, constants: path.constants };
+      const functional = MathFun(expression, options);
+      const startEnd = getVariablesDomain(path.variables, domain, functional.variables);
+      path = functional.plot(...startEnd, path.steps || 1e3);
+      // path = MathFun.util.offsetPath(path, -2, -1, .5, 1);
+      // path = MathFun.util.roundPath(path);
+    } else { path = expression; } // @ts-expect-error
+    unsetPath(id); svgProps.paths.push({ id, path, domain, attr, scaleX, scaleY });
+    scheduleRenderSvg();
+  };
+
+  const removePath = (evel) => {
+    evel = getButtonField(evel); setSelectedStyle(evel, null);
+    const id = `path-${getIdNumber(evel.id)}`; unsetPath(id);
+    scheduleRenderSvg();
+  };
+
+  const fieldChange = (evel) => {
+    evel = evel.currentTarget?.parentNode ?? evel;
+    setSelectedStyle(evel, 'render-button', 'half-selected-back');
+    ge('refresh-paths-button')?.classList.add('selected-back');
+  };
+
+  const removeField = (evel) => { evel = getButtonField(evel); removePath(evel); evel.remove(); };
+
+  const domainClick = (evel) => {
+    evel = qs(`#${evel.currentTarget.getAttribute('for')}`) ?? evel;
+    const on = evel.classList.contains('selected-back');
+    on ? evel.classList.remove('selected-back') : evel.classList.add('selected-back');
+    evel.blur(); scheduleRenderSvg();
+  };
+
+  const scaleYClick = (evel) => {
+    evel = qs(`#${evel.currentTarget.getAttribute('for')}`) ?? evel;
+    evel.value = '1'; evel.classList.remove('selected-back');
+    evel.blur(); scheduleRenderSvg();
+  };
+
+  const renderButtonClick = (ev) => {
+    const on = ev.currentTarget.classList.contains('selected-back');
+    if (ev.ctrlKey) { on && removeField(ev); }
+    else { on ? removePath(ev) : addPath(ev); }
+  };
+
+  const svgClick = (ev) => {
+    if (ev.detail > 2) { return; }
+    if (ev.detail > 1) { return; } // dbl // console.log(`!!!!!!!! svgClick click`, ev);
+    const out = ev.ctrlKey, into = ev.shiftKey;
+    let pointer = getPointer(ev, ev.currentTarget);
+    out || into ? zoomOnSvgPointer(pointer, out, into) : updatePointerCross(pointer), updateCaption();
+  };
+
+  const svgDebounced = debounce(svgClick, 250);
+
+  const refreshPaths = () => {
+    ge('refresh-paths-button')?.classList.remove('selected-back');
+    const fields = svgProps.paths.map((/** @type {object} */ p) => ge(`field-${getIdNumber(p.id)}`));
+    fields.forEach((f) => addPath(f));
+  };
+  //<!/script>
+  //<!script type="module">// @ts-check 'use strict';
+  // @ts-expect-error
+  window.MathFun = MathFun; // @ts-expect-error
+  window.addField = addField; // @ts-expect-error
+  window.domainClick = domainClick; // @ts-expect-error
+  window.scaleYClick = scaleYClick; // @ts-expect-error
+  window.scheduleRenderSvg = scheduleRenderSvg; // @ts-expect-error
+  window.svgClick = svgClick; // @ts-expect-error
+  window.svgDebounced = svgDebounced; // @ts-expect-error
+  window.refreshPaths = refreshPaths; // @ts-expect-error
+  window.svgProps = svgProps; // @hide/show
+
+  const pwave = (x, p, r, ox = 0, oy = 0) => {
+    x = (x - ox) % p + (x < ox ? p : 0); r = x < p / 2 ? -r : r; x *= 4 / p; x = r < 0 ? x - 1 : 3 - x;
+    return r * x * x - r + oy;
+  };
+
+  (function ready(...args) {
+    if (!document.body) return setTimeout(ready, 50, ...args);
+    // log('ready', arguments);
+    const dbS = CSSUtil.getElementStyle(document.body);
+    dbS.set('opacity', '0');
+    when().then(() => {
+    //   return delay(2e3);
+    // }).then(() => {
+      dbS.add('fade-in');
+      return when(() => dbS.get('opacity') === '1');
+    }).then(() => {
+      dbS.update('opacity');
+      return delay(2e3);
+    }).then(() => {
+      dbS.replace('fade-in', 'fade-out');
+      return when(() => dbS.get('opacity') === '0');
+    }).then(() => {
+      dbS.update('opacity');
+    //   return delay(2e3);
+    // }).then(() => {
+      dbS.replace('fade-out', 'fade-in');
+      return when(() => dbS.get('opacity') === '1');
+    }).then(() => {
+      dbS.update('opacity');
+    });
+
+    // addPath(addField({
+    //   expression: 'x ^ 2 - 1',
+    //   attr: { stroke: 'var(--svg-colt-stroke-1)' },
+    // }));
+
+    addPath(addField({
+      expression: 'x ^ 2 / 1e2 + wave(x, t, A, H, V)',
+      variables: { x: NaN, t: 2 },
+      constants: { A: 1, H: 0, V: 0 },
+      functions: { pwave },
+      attr: { stroke: '#00cc44' },
+    }));
+
+    // addPath(addField({
+    //   expression: '(x - 1) ^ 2 - .5',
+    //   attr: { stroke: 'var(--svg-colt-stroke-1)' },
+    // }));
+
+    // addPath(addField({
+    //   expression: 'wave(x, t, A, H, V)',
+    //   variables: { x: NaN, t: "Math.PI * 2" },
+    //   constants: { A: 1, H: "Math.PI / 2", V: .25 },
+    //   functions: { pwave },
+    //   attr: { stroke: '#00cc44' },
+    // }));
+
+    // addPath(addField({
+    //   expression: 'sin(x + PI / 4) + .25',
+    //   attr: { stroke: 'var(--svg-colt-stroke-2)' },
+    // }));
+
+    // addPath(addField({
+    //   expression: 'sin(6/x)',
+    //   attr: { stroke: "#dd8822" },
+    // }));
+
+    // addPath(addField({
+    //   expression: 'M -2.2,-1.2 L -1,-0.4 L -0.1,1.1 L 2.1,1.9',
+    //   attr: { stroke: '#22cc44' },
+    // }));
+
+    CSSUtil({ themed: 'colt', themes: ['coll', 'cold'] });
+    CSSUtil.toggleCssTheme(); // @ts-expect-error // @show/hide
+    window.CSSUtil = CSSUtil; // @hide/show
+    // scheduleRenderSvg();
+  })();
+  </script>
+</head><body>
+  <div id="panelDiv">
+    <svg id="panelSvg" onclick="svgClick(event)"></svg>
+  </div>
+  <div id="headerDiv" class="display-block justify-end margin-block-start">
+    <div id="captionDiv"></div>
+    <div class="display-flex justify-end">
+      <label for="point-input" ondblclick="domainClick(event)">P:</label>
+      <input type="text" id="point-input" class="text-input"
+        value="[]" onchange="scheduleRenderSvg()"/>
+      <label for="zoom-input" ondblclick="domainClick(event)">Z:</label>
+      <input type="text" id="zoom-input" class="text-input"
+        value="1" onchange="scheduleRenderSvg()"/>
+      <label for="aspect-input" ondblclick="scaleYClick(event)">A:</label>
+      <input type="text" id="aspect-input" class="text-input"
+        value="1" onchange="scheduleRenderSvg()"/>
+      <button id="add-field-button" class="char-button" onclick="addField()">+</button>
+      <button id="toggle-theme-button" class="char-button" onclick="CSSUtil.toggleCssTheme()">Ø</button>
+      <button id="refresh-paths-button" class="char-button" onclick="refreshPaths()">*</button>
+    </div>
+  </div>
+  <div id="formDiv"></div>
+</body></html>
