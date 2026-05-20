@@ -12,7 +12,8 @@ logs/
 temp/
 
 /packages/*/lib/
-/packages/*/modules/
+/packages/*/utils/
+/packages/*/imports/
 
 *.cache*
 *.*.map
@@ -36,6 +37,7 @@ ehthumbs.db
 
 !/.github/
 !.storybook/
+!/packages/imports/dev_modules/min_modules/**/*
 
 # !_exclude
 # !_local_modules/**/*

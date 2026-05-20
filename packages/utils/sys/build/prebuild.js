@@ -18,10 +18,8 @@ method(origBase + '/utils/core', destBase + '/view/utils/core');
 method(origBase + '/utils/view', destBase + '/view/utils/view');
 
 for (const folder of importsCore) {
-  try { method(origBase + '/lib/core/' + folder, destBase + '/view/lib/core/' + folder); }
-  catch (_) { log.error(`prebuild error linking imports-core "${folder}":`); }
+  method(origBase + '/imports/core/' + folder, destBase + '/view/imports/core/' + folder);
 }
 for (const folder of importsView) {
-  try { method(origBase + '/lib/view/' + folder, destBase + '/view/lib/view/' + folder); }
-  catch (_) { log.error(`prebuild error linking imports-view "${folder}":`); }
+  method(origBase + '/imports/view/' + folder, destBase + '/view/imports/view/' + folder);
 }
