@@ -14,6 +14,13 @@ export * as fs from 'node:fs';
 export const fsP = fs.promises;
 export * from '../core/core.js';
 
+/** Process Arguments functionality: */
+
+export const getNamedArg = (name) => {
+  const arg = process.argv.slice(2).find((a) => a.startsWith(`--${name}=`));
+  return arg ? arg.split('=')[1].replace(/^"|"$/g, '') : undefined;
+};
+
 /** Test functionality: */
 
 export const assertError = (a, b) => {
