@@ -37,7 +37,7 @@ ehthumbs.db
 
 !/.github/
 !.storybook/
-!/packages/imports/dev_modules/min_modules/**/*
+!/packages/imports/sys/dev_modules/min_modules/**/*
 
 # !_exclude
 # !_local_modules/**/*
