@@ -3,7 +3,6 @@
 
 _ignore/
 node_modules/
-local_modules/
 gen/
 cache/
 dist/
@@ -11,9 +10,9 @@ bin/
 logs/
 temp/
 
+/packages/*/imports/
 /packages/*/lib/
 /packages/*/utils/
-/packages/*/imports/
 
 *.cache*
 *.*.map
@@ -37,8 +36,10 @@ ehthumbs.db
 
 !/.github/
 !.storybook/
-!/packages/imports/sys/dev_modules/min_modules/**/*
+
+/packages/imports/sys/dev_modules/electron_modules/
 
 # !_exclude
+# local_modules/
 # !_local_modules/**/*
 # !*/*.zip
