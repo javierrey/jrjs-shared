@@ -36,8 +36,10 @@ ehthumbs.db
 
 !/.github/
 !.storybook/
+!/packages/imports/
+!/packages/imports/**/*/
 
-/packages/imports/sys/dev_modules/electron_modules/
+/packages/imports/sys/dev_modules/electron_modules/**
 
 # !_exclude
 # local_modules/
