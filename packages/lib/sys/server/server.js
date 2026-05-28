@@ -103,11 +103,10 @@ const resolveRoute = (request, urlParts, props) => {
     while (route[offset] === topRoute[offset]) { offset++; }
     route = [...topRoute.slice(0, offset + props.topOpen), ...route.slice(offset)];
   }
-  log.debug(
-    `resolveRoute referer "${request.headers.referer}", route [${route}] (${isTop}, ${urlParts.path !== props.topPath}): `,
-    urlParts,
-    props,
-  );
+  // log.debug(
+  //   `resolveRoute referer "${request.headers.referer}", route [${route}] (${isTop}, ${urlParts.path !== props.topPath}): `,
+  //   urlParts, props,
+  // );
   return route;
 };
 
