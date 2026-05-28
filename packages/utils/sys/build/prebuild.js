@@ -9,8 +9,8 @@ const destBase = './packages';
 
 const method = argv[0] === 'symlink' ? symlinkDir : copyDir; // copy, symlink
 
-const importsCore = getNamedArgumentValue('imports-core')?.split(',') ?? [];
-const importsView = getNamedArgumentValue('imports-view')?.split(',') ?? [];
+const importsCore = getNamedArgumentValue('imports-core')?.split(',').filter(Boolean) ?? [];
+const importsView = getNamedArgumentValue('imports-view')?.split(',').filter(Boolean) ?? [];
 
 method(origBase + '/lib/core', destBase + '/view/lib/core');
 method(origBase + '/lib/view', destBase + '/view/lib/view');
