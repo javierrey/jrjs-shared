@@ -4,6 +4,29 @@ jrjs-shared-code.txt
 ----------------------------------------------------------
 ----------------------------------------------------------
 ----------------------------------------------------------
+server.js
+
+const log = Log({ name: 'server', level: 4 });
+
+const resolveRoute = (request, urlParts, props) => {
+  let route = urlParts.path.split('/').slice(1);
+  const isTop = !request.headers.referer || !props.topPath;
+  if (!request.headers.referer || !props.topPath) {
+    props.topPath = urlParts.path; props.topOpen = urlParts.open;
+  }
+  if (urlParts.path !== props.topPath) {
+    const topRoute = props.topPath.split('/').slice(1); let offset = 0;
+    while (route[offset] === topRoute[offset]) { offset++; }
+    route = [...topRoute.slice(0, offset + props.topOpen), ...route.slice(offset)];
+  }
+  log.debug(
+    `resolveRoute referer "${request.headers.referer}", route [${route}] (${isTop}, ${urlParts.path !== props.topPath}): `,
+    urlParts,
+    props,
+  );
+  return route;
+};
+
 ----------------------------------------------------------
 
 // sys/index.js
