@@ -4,11 +4,13 @@ import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
 import {
-  log, toStr, isNul, isJso, isBin, urlComponents, parseQuery, getSample,
+  Log, toStr, isNul, isJso, isBin, urlComponents, parseQuery, getSample,
   fileSize, readFile, readStream,
 } from '../sys-x.js';
 
 /* server core: */
+
+const log = Log({ name: 'server', level: 4 });
 
 const config = {};
 const clients = [];
@@ -101,6 +103,11 @@ const resolveRoute = (request, urlParts, props) => {
     while (route[offset] === topRoute[offset]) { offset++; }
     route = [...topRoute.slice(0, offset + props.topOpen), ...route.slice(offset)];
   }
+  log.debug(
+    `resolveRoute referer "${request.headers.referer}", route [${route}] (${isTop}, ${urlParts.path !== props.topPath}): `,
+    urlParts,
+    props,
+  );
   return route;
 };
 
