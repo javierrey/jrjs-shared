@@ -94,8 +94,7 @@ const resolveClient = (request) => {
 
 const resolveRoute = (request, urlParts, props) => {
   let route = urlParts.path.split('/').slice(1);
-  const isTop = !request.headers.referer || !props.topPath;
-  if (!request.headers.referer || !props.topPath) {
+  if (!props.topPath || (!request.headers.referer && urlParts.open)) {
     props.topPath = urlParts.path; props.topOpen = urlParts.open;
   }
   if (urlParts.path !== props.topPath) {
@@ -103,10 +102,6 @@ const resolveRoute = (request, urlParts, props) => {
     while (route[offset] === topRoute[offset]) { offset++; }
     route = [...topRoute.slice(0, offset + props.topOpen), ...route.slice(offset)];
   }
-  // log.debug(
-  //   `resolveRoute referer "${request.headers.referer}", route [${route}] (${isTop}, ${urlParts.path !== props.topPath}): `,
-  //   urlParts, props,
-  // );
   return route;
 };
 
