@@ -136,21 +136,20 @@ Updates the content of a target object with properties from one or more source o
 Same as method `merge`, but the behaviour is configurable and avoids cyclic redundancy.
 Both target and source parameters should be plain objects.
 The `opt` parameter can be null or an object with `mode` and `exclude` options.
-The `mode` option may be: 0 (`default`), 1 (`exhaust`), 2 (`overwrite`), and 3 (`extend`).
-The `default` mode modifies existing properties and creates new properties in the target,
+The `mode` option may be: 0 (`clean`), 1 (`assign`), 2 (`overwrite`) and 3 (`extend`).
+The `clean` mode modifies existing properties and creates new properties in the target,
 but also removes properties, when the matching property name in the source has value `undefined`.
-The `exhaust` mode does the same as `default`, but doesn't remove properties from the target.
+The `assign` mode does the same as `clean`, but doesn't remove properties from the target.
 The `overwrite` mode can update target properties but cannot create new ones.
-The `extend` mode can create new properties in the target but cannot modify existing ones.
-The `exclude` option array may contain property names and object references
-that will be treated as direct values, rather than traversed recursively.
+The `extend` mode can create new properties in the target but cannot modify existing defined values.
+The `exclude` option array may contain property names and object references that will be treated as direct
+values, rather than traversed recursively.
 e.g. `const mergeFunc = (tgt, ...srcs) => customMerge({ mode: 1, exclude: ['parent', this] }, tgt, ...srcs);`
 To prevent the mutation of the orignal target, use a clone: `customMerge(null, customClone(null, tgt), ...srcs);`.
 */
 export const customMerge = (opt, tgt, ...srcs) => {
   if (typeof opt === 'number') { opt = { mode: opt }; } else { opt ??= {}; }
-  const set =
-    opt.mode === 3 ? (o, k, v) => { !(k in o) && (o[k] = v); }
+  const set = opt.mode === 3 ? (o, k, v) => { o[k] === undefined && (o[k] = v); }
     : opt.mode === 2 ? (o, k, v) => { k in o && (o[k] = v); }
     : opt.mode === 1 ? (o, k, v) => { o[k] = v; }
     : (o, k, v) => { v === undefined ? delete o[k] : (o[k] = v); };

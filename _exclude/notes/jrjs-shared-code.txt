@@ -3,6 +3,54 @@ jrjs-shared-code.txt
 ----------------------------------------------------------
 ----------------------------------------------------------
 ----------------------------------------------------------
+setDefaults:
+
+// Not replacing empties for non-recursive: '', [], {}
+
+/**
+Populates default values in an object, using a defaults object.
+Only sets a property when the target value is absent: undefined, null or NaN.
+When `recursive` is true, empty values '', [] and {} are also replaced when the default has content,
+and nested objects are updated with the corresponding nested default properties.
+*/
+export const setDefaults = (obj, defaults, recursive = false) => {
+  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
+  const set = (o, k, v) => {
+    v != null && v !== o[k] && (
+      o[k] == null || Object.is(o[k], NaN) || (recursive &&
+        (o[k] instanceof Object || typeof o[k] === 'string') && !Object.keys(o[k]).length && Object.keys(v).length)
+    ) && (o[k] = v);
+  };
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => recursive && isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
+  obj = Object.assign(obj ?? {}); defaults = Object.assign(defaults ?? {}); travel(obj, defaults);
+  return obj;
+};
+
+// Replacing empties for non-recursive: '', [], {}
+
+/**
+Populates default values in an object, using a defaults object.
+Only sets a property when the target value is considered absent or empty:
+undefined, null, NaN, '', {} and [].
+When `recursive` is true, nested plain objects are traversed and extended
+with properties from the corresponding defaults sub-object.
+*/
+export const setDefaults = (obj, defaults, recursive = false) => {
+  const isObj = recursive ? (v) => !!v && [Object, undefined].includes(v.constructor) : () => false;
+  const set = (o, k, v) => {
+    const c = o[k];
+    v != null && v !== c && (
+      c == null || Object.is(c, NaN) ||
+      ((c instanceof Object || typeof c === 'string') && !Object.keys(c).length && Object.keys(v).length)
+    ) && (o[k] = v);
+  };
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
+  obj = Object.assign(obj ?? {}); defaults = Object.assign(defaults ?? {}); travel(obj, defaults);
+  return obj;
+};
+
 ----------------------------------------------------------
 server.js
 

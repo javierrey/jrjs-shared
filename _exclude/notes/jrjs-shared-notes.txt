@@ -7,8 +7,83 @@ jrjs-shared-notes.txt
 -----------------------------------------------
 -----------------------------------------------
 -----------------------------------------------
+# setDefaults:
 
+## Strict (empties not updated on non-recursive):
 
+### recursive = false — only null/undefined/NaN updated:
+
+Case	before	default	result	set?
+null → value	null	"hello"	"hello"	YES
+undefined → value	undef	"hello"	"hello"	YES
+null → obj	null	{a:1}	{a:1}	YES
+{} → {a:1}	{}	{a:1}	{}	no
+{a:1} → {b:2}	{a:1}	{b:2}	{a:1}	no
+[] → [1]	[]	[1]	[]	no
+'' → 'hello'	""	"hello"	""	no
+NaN → 42	NaN	42	42	YES
+nested: null tgt key	{a:null}	{a:99}	{a:null}	no
+nested: undef tgt key	{a:undef}	{a:99}	{a:undef}	no
+nested: exist tgt key	{a:1}	{a:99}	{a:1}	no
+nested: new src key	{a:1}	{b:2}	{a:1}	no
+nested: {} tgt key	{a:{}}	{a:{x:1}}	{a:{}}	no
+deep nested	{a:{x:null}}	{a:{x:99,y:5}}	{a:{x:null}}	no
+
+### recursive = true — deep, also fills empty values:
+
+Case	before	default	result	set?
+null → value	null	"hello"	"hello"	YES
+undefined → value	undef	"hello"	"hello"	YES
+null → obj	null	{a:1}	{a:1}	YES
+{} → {a:1}	{}	{a:1}	{a:1}	YES
+{a:1} → {b:2}	{a:1}	{b:2}	{a:1,b:2}	YES
+[] → [1]	[]	[1]	[1]	YES
+'' → 'hello'	""	"hello"	"hello"	YES
+NaN → 42	NaN	42	42	YES
+nested: null tgt key	{a:null}	{a:99}	{a:99}	YES
+nested: undef tgt key	{a:undef}	{a:99}	{a:99}	YES
+nested: exist tgt key	{a:1}	{a:99}	{a:1}	no
+nested: new src key	{a:1}	{b:2}	{a:1,b:2}	YES
+nested: {} tgt key	{a:{}}	{a:{x:1}}	{a:{x:1}}	YES
+deep nested	{a:{x:null}}	{a:{x:99,y:5}}	{a:{x:99,y:5}}	YES
+
+## Loose (empties updated on non-recursive):
+
+### recursive = false (flat):
+
+Case	obj.k (before)	default	result	set?
+null → value	null	"hello"	"hello"	YES
+undefined → value	undef	"hello"	"hello"	YES
+null → obj	null	{a:1}	{a:1}	YES
+{} → {a:1}	{}	{a:1}	{a:1}	YES
+{a:1} → {b:2}	{a:1}	{b:2}	{a:1}	no
+[] → [1]	[]	[1]	[1]	YES
+'' → 'hello'	""	"hello"	"hello"	YES
+NaN → 42	NaN	42	42	YES
+nested: {} tgt key	{a:1}	{b:2}	{a:1}	no
+nested: null tgt key	{a:null}	{a:99}	{a:null}	no
+nested: undef tgt key	{a:undef}	{a:99}	{a:undef}	no
+nested: exist tgt key	{a:1}	{a:99}	{a:1}	no
+nested: new src key	{a:1}	{b:2}	{a:1}	no
+deep nested	{a:{x:null}}	{a:{x:99,y:5}}	{a:{x:null}}	no
+
+### recursive = true (deep):
+
+Case	obj.k (before)	default	result	set?
+null → value	null	"hello"	"hello"	YES
+undefined → value	undef	"hello"	"hello"	YES
+null → obj	null	{a:1}	{a:1}	YES
+{} → {a:1}	{}	{a:1}	{a:1}	YES
+{a:1} → {b:2}	{a:1}	{b:2}	{a:1,b:2}	YES
+[] → [1]	[]	[1]	[1]	YES
+'' → 'hello'	""	"hello"	"hello"	YES
+NaN → 42	NaN	42	42	YES
+nested: {} tgt key	{a:1}	{b:2}	{a:1,b:2}	YES
+nested: null tgt key	{a:null}	{a:99}	{a:99}	YES
+nested: undef tgt key	{a:undef}	{a:99}	{a:99}	YES
+nested: exist tgt key	{a:1}	{a:99}	{a:1}	no
+nested: new src key	{a:1}	{b:2}	{a:1,b:2}	YES
+deep nested	{a:{x:null}}	{a:{x:99,y:5}}	{a:{x:99,y:5}}	YES
 
 -----------------------------------------------
 -----------------------------------------------

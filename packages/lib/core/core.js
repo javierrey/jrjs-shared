@@ -326,6 +326,25 @@ export const equal = (o1, o2) => {
 };
 
 /**
+Populates default values in an object when they are absent: undefined, null or NaN.
+When `recursive` is true, empty values '', [] and {} are also replaced when the default has content,
+and nested objects are updated with the corresponding nested default properties.
+*/
+export const setDefaults = (obj, defaults, recursive = false) => {
+  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
+  const set = (o, k, v) => {
+    v != null && v !== o[k] && (
+      o[k] == null || Object.is(o[k], NaN) || (recursive &&
+        (o[k] instanceof Object || typeof o[k] === 'string') && !Object.keys(o[k]).length && Object.keys(v).length)
+    ) && (o[k] = v);
+  };
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => recursive && isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
+  obj = Object.assign(obj ?? {}); defaults = Object.assign(defaults ?? {}); travel(obj, defaults);
+  return obj;
+};
+
+/**
 Creates a deep partial of an object based on a filter schema.
 Only properties from the object present in the filter with value true (truthy) are included
 in the partial, missing or falsy properties in the filter are excluded.
@@ -381,11 +400,15 @@ export const merge = (tgt, ...srcs) => {
 /**
 Gets a property value in an unknown type object if present, or undefined otherwise.
 Accepts a list of nested keys: `getProperty(object, 'items', '0', 'title', 'en-US')`
+In its Typescript version, `getProperty` can be combined with `hasKey`, to quickly
+reach and assert the presence of a property in an `unknown` type, avoiding `any`:
 ```typescript
 export const getProperty = (object: unknown, ...keys: PropertyKey[]) => keys.reduce(
   (acc, key) => acc && typeof acc === 'object' && key in acc ? (acc as { [key in PropertyKey]: unknown })[key] : undefined,
   object,
 );
+export const hasKey = (object: unknown, key: PropertyKey): object is { [key]: unknown } =>
+  !!object && typeof object === 'object' && key in object;
 ```
 */
 export const getProperty = (object, ...keys) =>
