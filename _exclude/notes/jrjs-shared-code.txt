@@ -3,7 +3,67 @@ jrjs-shared-code.txt
 ----------------------------------------------------------
 ----------------------------------------------------------
 ----------------------------------------------------------
-setDefaults:
+hydrate:
+-----------------------------------
+-----------------------------------
+
+/**
+Populates an object with default values from other objects, when they are absent
+or less curated than the source defaults: undefined, null, NaN, '', [] and {}.
+Nested objects are extended recursively with the corresponding default values.
+*/
+export const hydrate = (tgt, ...srcs) => {
+  const set = (o, k, v) => v != null && v !== o[k] && (
+    o[k] == null || Object.is(o[k], NaN) || o[k] === '' ||
+    (typeof o[k] === 'object' && typeof v === 'object' && !Object.keys(o[k]).length && Object.keys(v).length)
+  ) && (o[k] = v);
+  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
+  tgt = Object.assign(tgt ?? {});
+  srcs.forEach((src) => { src = Object.assign(src ?? {}); travel(tgt, src); });
+  return tgt;
+};
+
+/**
+Populates an object with default values when they are absent: undefined, null or NaN.
+If `fill` is true, empty values '', [] and {} are also replaced when the default has content,
+and nested objects are extended recursively with the corresponding default values.
+*/
+export const hydrate = (obj, dft, fill = false) => {
+  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
+  const set = (o, k, v) => {
+    v != null && v !== o[k] && (
+      o[k] == null || Object.is(o[k], NaN) || (fill &&
+        (o[k] instanceof Object || typeof o[k] === 'string') && !Object.keys(o[k]).length && Object.keys(v).length)
+    ) && (o[k] = v);
+  };
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => fill && isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
+  obj = Object.assign(obj ?? {}); dft = Object.assign(dft ?? {}); travel(obj, dft);
+  return obj;
+};
+
+/**
+Populates an object with default values when they are absent: undefined, null or NaN.
+If `fill` is 1, empty values '', [] and {} are also replaced when the default has content.
+If `fill` is 2, nested objects are extended recursively with the corresponding default values.
+*/
+export const hydrate = (obj, def, fill = 0) => {
+  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
+  const set = (o, k, v) => {
+    v != null && v !== o[k] && (
+      o[k] == null || Object.is(o[k], NaN) || (fill &&
+        (o[k] instanceof Object || typeof o[k] === 'string') && !Object.keys(o[k]).length && Object.keys(v).length)
+    ) && (o[k] = v);
+  };
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => fill > 1 && isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
+  obj = Object.assign(obj ?? {}); def = Object.assign(def ?? {}); travel(obj, def);
+  return obj;
+};
+
+-----------------------------------
 
 // Not replacing empties for non-recursive: '', [], {}
 

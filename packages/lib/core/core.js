@@ -326,25 +326,6 @@ export const equal = (o1, o2) => {
 };
 
 /**
-Populates default values in an object when they are absent: undefined, null or NaN.
-When `recursive` is true, empty values '', [] and {} are also replaced when the default has content,
-and nested objects are updated with the corresponding nested default properties.
-*/
-export const setDefaults = (obj, defaults, recursive = false) => {
-  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const set = (o, k, v) => {
-    v != null && v !== o[k] && (
-      o[k] == null || Object.is(o[k], NaN) || (recursive &&
-        (o[k] instanceof Object || typeof o[k] === 'string') && !Object.keys(o[k]).length && Object.keys(v).length)
-    ) && (o[k] = v);
-  };
-  const travel = (t, s) => s !== t && Object.entries(s)
-    .forEach(([k, v]) => recursive && isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
-  obj = Object.assign(obj ?? {}); defaults = Object.assign(defaults ?? {}); travel(obj, defaults);
-  return obj;
-};
-
-/**
 Creates a deep partial of an object based on a filter schema.
 Only properties from the object present in the filter with value true (truthy) are included
 in the partial, missing or falsy properties in the filter are excluded.
@@ -392,6 +373,25 @@ export const merge = (tgt, ...srcs) => {
   const travs = (o, k, v) => isObj(o[k]) && isObj(v) && v !== globalThis;
   const travel = (t, s) => s !== t && Object.entries(s)
     .forEach(([k, v]) => travs(t, k, v) ? travel(t[k], v) : set(t, k, v));
+  tgt = Object.assign(tgt ?? {});
+  srcs.forEach((src) => { src = Object.assign(src ?? {}); travel(tgt, src); });
+  return tgt;
+};
+
+/**
+Populates an object with default values from other objects, when they are absent
+or less curated than the source defaults: undefined, null, NaN, '', [] and {}.
+Nested objects are extended recursively with the corresponding default values.
+*/
+export const hydrate = (tgt, ...srcs) => {
+  const set = (o, k, v) => v != null && v !== o[k] && (
+    o[k] == null || Object.is(o[k], NaN) || (!Object.is(v, NaN) && (
+      o[k] === '' || (typeof o[k] === 'object' && typeof v === 'object' &&
+        !Object.keys(o[k]).length && Object.keys(v).length)))
+  ) && (o[k] = v);
+  const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
+  const travel = (t, s) => s !== t && Object.entries(s)
+    .forEach(([k, v]) => isObj(t[k]) && isObj(v) ? travel(t[k], v) : set(t, k, v));
   tgt = Object.assign(tgt ?? {});
   srcs.forEach((src) => { src = Object.assign(src ?? {}); travel(tgt, src); });
   return tgt;
