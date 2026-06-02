@@ -10,16 +10,21 @@ jrjs-shared-notes.txt
 # hydrate:
 
 tgt.a	src.a	tgt.a after	status	note
-undefined	'x'	'x'	replaced	== null
-undefined	NaN	NaN	replaced	== null — no NaN guard ⚠️
-null	'x'	'x'	replaced	== null
-null	NaN	NaN	replaced	== null — no NaN guard ⚠️
-NaN	'x'	'x'	replaced	Object.is(o[k],NaN)
-NaN	NaN	NaN	unchanged	v !== o[k] is false
-NaN	null	NaN	unchanged	v != null is false
-''	'x'	'x'	replaced	!Object.is(v,NaN) ✓ → ==='' fires
-''	NaN	''	unchanged	Object.is(v,NaN) blocks ✓
-''	0	0	replaced	0 not NaN, ==='' fires ⚠️
+undefined	'x'	'x'	replaced	v === null false → normal path, == null fires
+undefined	NaN	NaN	replaced	normal path, == null fires — no NaN guard ⚠️
+undefined	null	null	replaced	v === null → o[k] === undefined ✓
+null	'x'	'x'	replaced	normal path, == null fires
+null	NaN	NaN	replaced	normal path, == null fires — no NaN guard ⚠️
+null	null	null	unchanged	v !== o[k] is false
+null	undefined	null	unchanged	v !== undefined is false
+NaN	'x'	'x'	replaced	Object.is(o[k],NaN) fires
+NaN	NaN	NaN	unchanged	v !== o[k]: NaN !== NaN true, but Object.is(o[k],NaN) fires then Object.is(v,NaN) blocks via inner path — wait, v === null false → Object.is(o[k],NaN) fires ✓ → o[k] = NaN (no-op value-wise)
+NaN	null	NaN	unchanged	v === null → o[k] === undefined false
+NaN	undefined	NaN	unchanged	v !== undefined is false
+''	'x'	'x'	replaced	==='' fires
+''	NaN	''	unchanged	!Object.is(v,NaN) blocks ✓
+''	null	''	unchanged	v === null → o[k] === undefined false ✓
+''	0	0	replaced	==='' fires, no src type guard ⚠️
 ''	false	false	replaced	same ⚠️
 ''	[]	[]	replaced	same ⚠️
 ''	{}	{}	replaced	same ⚠️
@@ -27,17 +32,17 @@ NaN	null	NaN	unchanged	v != null is false
 1	2	1	unchanged	same
 {a:1}	{b:2}	{a:1,b:2}	mutated	both isObj → travel, adds missing keys
 {}	{a:1}	{a:1}	mutated	both isObj → travel
-{}	[1]	[1]	replaced	isObj([1]) is false → set; both typeof object, empty→non-empty ⚠️ cross-type
+{}	[1]	[1]	replaced	isObj([1]) false → set; empty→non-empty ⚠️ cross-type
 []	[1,2]	[1,2]	replaced	both typeof object, empty→non-empty
 []	{a:1}	{a:1}	replaced	same ⚠️ cross-type
 [1]	[2,3]	[1]	unchanged	non-empty, no clause fires
-{a:1}	{a:2}	{a:1}	unchanged	both isObj → travel → set(a,2): o[k] is 1, no clause fires
+{a:1}	{a:2}	{a:1}	unchanged	travel → set(a,2): no clause fires
 
-Remaining open issues:
+Remaining caveats (ok for me):
 
-null/undefined → NaN: probably intentional, but worth confirming
-'' → 0/false/[]/{}: the ==='' clause has no src type guard
-[]↔{} cross-type replacement: Array.isArray check would fix it
+null/undefined → NaN: probably intentional, but worth confirming ⚠️
+'' → 0/false/[]/{}: the ==='' clause has no src type guard ⚠️
+[]↔{} cross-type replacement ⚠️
 
 -----------------------------------------------
 -----------------------------------------------

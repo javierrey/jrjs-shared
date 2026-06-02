@@ -21,7 +21,6 @@ export const AsyncFunction = (async () => {}).constructor;
 /** Quick type checks and casts. Copy inside pure independent functions. */
 
 export const isNul = (v) => [undefined, null, NaN].includes(v);
-export const isEmp = (v) => { for (const p in (v ?? {})) return false; return true; };
 export const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
 export const isArr = (v) => !!v?.[Symbol.iterator] && v.constructor !== String;
 export const isPri = (v) => !v || !(v instanceof Object || !v.constructor);
@@ -33,6 +32,10 @@ export const isSca = (v) => !v || [Boolean, Number, String, BigInt].includes(v.c
 export const isXml = (v) => /^\s*</.test(v) && />\s*$/.test(v);
 export const isJso = (v) => /^\s*\[?\s*\{/.test(v) && /\}\s*\]?\s*$/.test(v);
 export const isBuf = (v) => typeof v?.slice === 'function' && 'byteLength' in v;
+export const isEmp = (v) => {
+  if (v == null || Object.is(v, NaN)) return true; if (v[Symbol.iterator]) return !(v.size ?? v.length);
+  for (const p in v) return false; return true;
+};
 export const isKey = (v) =>
   (Number.isInteger(v) && v > -1) || (typeof v === 'string' && v.length < 1025 && !/\s/.test(v));
 
@@ -384,10 +387,11 @@ or less curated than the source defaults: undefined, null, NaN, '', [] and {}.
 Nested objects are extended recursively with the corresponding default values.
 */
 export const hydrate = (tgt, ...srcs) => {
-  const set = (o, k, v) => v != null && v !== o[k] && (
-    o[k] == null || Object.is(o[k], NaN) || (!Object.is(v, NaN) && (
-      o[k] === '' || (typeof o[k] === 'object' && typeof v === 'object' &&
-        !Object.keys(o[k]).length && Object.keys(v).length)))
+  const set = (o, k, v) => v !== undefined && v !== o[k] && (
+    v === null ? o[k] === undefined : (
+      o[k] == null || Object.is(o[k], NaN) || (!Object.is(v, NaN) && (
+        o[k] === '' || (typeof o[k] === 'object' && typeof v === 'object' &&
+          !Object.keys(o[k]).length && Object.keys(v).length))))
   ) && (o[k] = v);
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
   const travel = (t, s) => s !== t && Object.entries(s)
