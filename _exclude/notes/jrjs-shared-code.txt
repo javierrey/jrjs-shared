@@ -112,6 +112,13 @@ export const setDefaults = (obj, defaults, recursive = false) => {
 };
 
 ----------------------------------------------------------
+
+export const isNulOrEmp = (v) => {
+  if (v == null || Object.is(v, NaN)) return true; if (v[Symbol.iterator]) return !(v.size ?? v.length);
+  for (const p in v) return false; return true;
+};
+
+----------------------------------------------------------
 server.js
 
 const log = Log({ name: 'server', level: 4 });
