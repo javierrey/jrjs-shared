@@ -2,32 +2,28 @@
 // @ts-check
 
 import fs from 'node:fs';
-import { globalState, log, resolvePath, getEnvironment } from '../../core/core.js';
+import { globalState, log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
 import { runServer } from './server.js';
-
-// import globalConfig from '../../../index.jso.js' with { type: 'json' };
 
 // const fsP = fs.promises;
 
-const config = globalState?.serverConfig ?? {};
+const defaults = {
+  baseDir: '',
+  publicDir: './view',
+  privateDir: '../../_ignore/store',
+  protocol: 'http',
+  host: '0.0.0.0', // '0.0.0.0', '127.0.0.1', 'localhost',
+  port: 3000,
+  sslCert: '/data/secret/cert.pem',
+  sslKey: '/data/secret/key.pem',
+  timeout: 50e3,
+  clientsSize: 1e3,
+  clientPortsSize: 16,
+  largeThreshold: 2e6,
+  uploadLimit: 8e6,
+};
 
-config.baseDir ??= '';
-
-config.publicDir ??= './view';
-config.privateDir ??= '../../_ignore/store';
-
-config.protocol ??= 'http';
-config.host ??= '0.0.0.0'; // '0.0.0.0', '127.0.0.1', 'localhost',
-config.port ??= 3000;
-
-config.sslCert ??= '/data/secret/cert.pem';
-config.sslKey ??= '/data/secret/key.pem';
-
-config.timeout ??= 50e3;
-config.clientsSize ??= 1e3;
-config.clientPortsSize ??= 16;
-config.largeThreshold ??= 2e6;
-config.uploadLimit ??= 8e6;
+const config = hydrate(globalState.serverConfig, defaults);
 
 // config.logConfig ??= { name: 'app', level: 3 };
 

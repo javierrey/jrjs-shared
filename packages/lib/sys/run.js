@@ -2,21 +2,24 @@
 // _@ts-check
 
 import cluster from 'node:cluster';
-import { globalState, log } from '../core/core.js';
+import { globalState, hydrate, log } from '../core/core.js';
 
 /**
 @typedef {import('node:cluster').Worker & { id?: number }} Worker;
 @typedef {NodeJS.Process & { id?: number }} Process;
 */
 
-const config = globalState?.processConfig ?? {};
+const defaults = {
+  workersSize: 1,
+  base: '',
+  primaryApps: [],
+  workerApps: [],
+};
 
+const config = hydrate(globalState.processConfig, defaults);
+
+/** Unique running process worker id */
 globalState.workerId ??= NaN;
-
-config.workersSize ??= 1;
-config.base ??= '';
-config.primaryApps ??= [];
-config.workerApps ??= [];
 
 /** @param {number} id @return {number} */
 // const getWorkerPid = (id) => cluster.workers?.[id]?.process?.pid ?? -1;
