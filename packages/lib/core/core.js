@@ -122,7 +122,7 @@ export const Log = (config = {}) => {
     const method = METHODS.includes(args[0]) ? args.shift() : METHODS[0], level = METHODS.indexOf(method);
     if (!config.level && level) return;
     const tron = config.trace && (config.trace >= level || level > 3);
-    const stack = trace(level), at = (stack[0] ?? '').trim().replace(/\(|.*\/|\)/g, '');
+    const stack = trace(level), at = (stack[0] ?? '').trim().replace(/\(|.*\/(?=\S+\/\S)|\)/g, '');
     const worker = isNaN(globalState.workerId) ? '' : ` W${globalState.workerId}`;
     const name = config.name ? ` "${config.name}"` : '';
     CONSOLE[method](`\n[${method.toUpperCase()} ${renderUTC()}]${worker}${name} @${at}`); args.forEach(print);
