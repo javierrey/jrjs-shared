@@ -2,15 +2,14 @@
 // @ts-check
 
 import fs from 'node:fs';
-import { log, resolvePath, getEnvironment } from '../../core/core.js';
+import { globalState, log, resolvePath, getEnvironment } from '../../core/core.js';
 import { runServer } from './server.js';
 
 // import globalConfig from '../../../index.jso.js' with { type: 'json' };
 
 // const fsP = fs.promises;
 
-const globalConfig = globalThis.globalConfig ?? {};
-const config = globalConfig?.serverConfig ?? globalConfig;
+const config = globalState?.serverConfig ?? {};
 
 config.baseDir ??= '';
 

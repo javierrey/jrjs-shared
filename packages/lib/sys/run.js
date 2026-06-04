@@ -1,18 +1,18 @@
 // sys/run.js
-// @ts-check
+// _@ts-check
 
 import cluster from 'node:cluster';
-import { log } from '../core/core.js';
+import { globalState, log } from '../core/core.js';
 
 /**
 @typedef {import('node:cluster').Worker & { id?: number }} Worker;
 @typedef {NodeJS.Process & { id?: number }} Process;
 */
 
-const globalConfig = globalThis.globalConfig ?? {};
-const config = globalConfig?.processConfig ?? globalConfig;
+const config = globalState?.processConfig ?? {};
 
-config.workerId ??= NaN;
+globalState.workerId ??= NaN;
+
 config.workersSize ??= 1;
 config.base ??= '';
 config.primaryApps ??= [];
@@ -67,10 +67,10 @@ const clusterPrimary = () => {
   const workersSize = /** @type {number} */ (config.workersSize);
   const imports = /** @type {string[]} */ (config.primaryApps);
 
-  config.workerId = workersSize ? 0 : NaN;
+  globalState.workerId = workersSize ? 0 : NaN;
   if (!workersSize) { imports.push(.../** @type {string[]} */ (config.workerApps)); }
 
-  log.info(`Primary id ${config.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports}]`);
+  log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports}]`);
 
   for (let i = 0; i < workersSize; i++) { cluster.fork(); }
 
@@ -96,9 +96,9 @@ const clusterPrimary = () => {
 
 /** Worker method to be used in the cluster script for `cluster.isWorker`. */
 const clusterWorker = () => {
-  config.workerId = cluster.worker?.id ?? -1;
+  globalState.workerId = cluster.worker?.id ?? -1;
   const imports = /** @type {string[]} */ (config.workerApps);
-  log.info(`Worker id ${config.workerId}, pid ${process.pid}, [${imports}]`);
+  log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports}]`);
 
   try {
     for (const appPath of imports) { import(config.base + appPath); }

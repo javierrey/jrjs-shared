@@ -15,6 +15,9 @@ author: javier.rey.eu@gmail.com
 @typedef {{ (...args: any[]): any, [key: string]: any }} FunctionObject;
 */
 
+/** Global state object. @type {PlainObject} */
+export const globalState = {};
+
 /** AsyncFunction constructor (no globalThis.AsyncFunction defined). */
 export const AsyncFunction = (async () => {}).constructor;
 
@@ -113,7 +116,6 @@ export const Log = (config = {}) => {
     const stack = (new Error().stack ?? '').trim().split('\n'); stack[0].startsWith('Error') && stack.shift();
     return stack.slice(level ? 3 : 2);
   };
-  const getProcessConfig = () => globalThis.globalConfig?.processConfig ?? globalThis.globalConfig ?? globalThis;
   const renderUTC = (d = new Date()) => d.toISOString().replace('T', ` ${DAYS[d.getUTCDay()]} `).slice(0, -1);
   const method = (level) => (...args) => { config.level >= level && log(METHODS[level], ...args); };
   const log = (...args) => { // main method
@@ -121,7 +123,7 @@ export const Log = (config = {}) => {
     if (!config.level && level) return;
     const tron = config.trace && (config.trace >= level || level > 3);
     const stack = trace(level), at = (stack[0] ?? '').trim().replace(/\(|.*\/|\)/g, '');
-    const wid = getProcessConfig().workerId, worker = isNaN(wid) ? '' : ` W${wid}`;
+    const worker = isNaN(globalState.workerId) ? '' : ` W${globalState.workerId}`;
     const name = config.name ? ` "${config.name}"` : '';
     CONSOLE[method](`\n[${method.toUpperCase()} ${renderUTC()}]${worker}${name} @${at}`); args.forEach(print);
     tron && stack.length > 1 && CONSOLE.log('TRACE:\n' + stack.slice(1).join('\n'));

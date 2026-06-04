@@ -26,9 +26,9 @@
     "dist",
     "gen",
     "**/*.test.*",
-    "packages/*/lib",
-    "packages/*/modules",
     "packages/*/imports",
+    "packages/*/lib",
+    "packages/*/utils",
     "packages/imports"
   ]
 }
