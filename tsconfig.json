@@ -6,6 +6,7 @@
     "typeRoots": ["./packages/imports/sys/dev_modules/@types"],
     "target": "ESNext",
     "allowJs": true,
+    "maxNodeModuleJsDepth": 2,
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationMap": true,
