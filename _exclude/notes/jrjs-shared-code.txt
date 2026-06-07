@@ -143,6 +143,16 @@ const resolveRoute = (request, urlParts, props) => {
 };
 
 ----------------------------------------------------------
+// sys/run.js
+
+/** @param {PlainObject} app @return {void} */
+const addAppConfig = (app) => {
+  if (app.name && app.config) {
+    globalState[app.name + 'Config'] = app.config;
+  }
+};
+
+----------------------------------------------------------
 
 // sys/index.js
 // @ts-check

@@ -5,7 +5,17 @@ import {
   log,
 } from '../core/core.js';
 
+/* Types functionality: */
+
+/**
+@typedef {import('../core/core.js').PlainObject} PlainObject;
+@typedef {Record<string, any>} ViewConfig;
+*/
+
 export * from '../core/core.js';
+
+/** View primary config. @type {ViewConfig} */
+export const viewConfig = {};
 
 /* * */
 

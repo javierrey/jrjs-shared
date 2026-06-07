@@ -7,14 +7,34 @@ import assert from 'node:assert';
 import { spawn } from 'node:child_process';
 
 import {
-  log, globalState,
+  log,
 } from '../core/core.js';
 
-globalState.primaryConfig ??= {};
+/* Types functionality: */
+
+/**
+@typedef {import('../core/core.js').PlainObject} PlainObject;
+@typedef {{
+  name: string;
+  path: string;
+  primary?: boolean;
+  requires?: string[];
+  state?: PlainObject;
+  config: PlainObject;
+}} AppLoader;
+@typedef {{
+  workersSize: number;
+  base: string;
+  apps: AppLoader[];
+}} SysConfig;
+*/
 
 export * as fs from 'node:fs';
 export const fsP = fs.promises;
 export * from '../core/core.js';
+
+/** System primary config. @type {SysConfig} */
+export const sysConfig = {};
 
 /** Process Arguments functionality: */
 

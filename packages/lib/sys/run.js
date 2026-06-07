@@ -3,53 +3,48 @@
 
 import cluster from 'node:cluster';
 import { globalState, hydrate, log } from '../core/core.js';
+import { sysConfig } from './sys.js';
 
 /**
 @typedef {import('node:cluster').Worker & { id?: number }} Worker;
 @typedef {NodeJS.Process & { id?: number }} Process;
 @typedef {import('../core/core.js').PlainObject} PlainObject;
-@typedef {{
-  name: string;
-  path: string;
-  primaryOnly?: boolean;
-  requires?: string[];
-  state?: PlainObject;
-  config: PlainObject;
-}} AppRunner;
-@typedef {{
-  workersSize: number;
-  base: string;
-  apps: AppRunner[];
-}} PrimaryConfig;
+@typedef {import('./sys.js').AppLoader} AppLoader;
+@typedef {import('./sys.js').SysConfig} SysConfig;
 */
 
-/** Unique running process worker id */
-globalState.workerId ??= NaN;
-
+/** @type {SysConfig} */
 const defaults = {
   workersSize: 1,
   base: '',
   apps: [],
 };
 
-/** @type {PrimaryConfig} */
-const config = hydrate(globalState.primaryConfig, defaults);
+hydrate(sysConfig, defaults);
 
-/** Get config app runner. */
-// const getAppRunner = (name) => config.apps.find((app) => app.name === name);
+/* Apps functionality: */
 
-/** Get app runners for the cluster type. */
-const getAppRunners = (primary = false) => config.apps.filter((app) => primary ? app.primaryOnly : !app.primaryOnly);
+/** Get sysConfig app runner. @param {string} name @return {AppLoader} */
+export const getAppLoader = (name) =>
+  sysConfig.apps.find((app) => app.name === name) ?? { name, path: '', config: {} };
 
-/** Import apps from app runners. @param {AppRunner[]} imports @returns {Promise<void>} */
+/** Get app runners for the cluster type. @param {boolean} primary @return {AppLoader[]} */
+const getAppLoaders = (primary = false) => sysConfig.apps.filter((app) => primary ? app.primary : !app.primary);
+
+/** Import apps from app runners. @param {AppLoader[]} imports @returns {Promise<void>} */
 const importApps = async (imports) => {
   try {
     for (const app of imports) {
-      globalState[app.name + 'Config'] = app.config;
-      await import(config.base + app.path);
+      if (app.path) { await import(sysConfig.base + app.path); }
     }
   } catch (err) { log.error(`Error in importApps`, err); }
 };
+
+/* * */
+
+/** @param {number} id @return {void} */
+const updateWorkerId = (id) => { globalState.workerId = id; };
+updateWorkerId(globalState.workerId ?? NaN);
 
 /** @param {number} id @return {number} */
 // const getWorkerPid = (id) => cluster.workers?.[id]?.process?.pid ?? -1;
@@ -97,10 +92,10 @@ const onMessage = (wrk = process, msg = '') => {
 
 /** Primary method to be used in the cluster script for `cluster.isPrimary`. */
 const clusterPrimary = () => {
-  const workersSize = /** @type {number} */ (config.workersSize);
-  globalState.workerId = workersSize ? 0 : NaN;
-  const imports = getAppRunners(true);
-  !workersSize && imports.push(...getAppRunners(false));
+  const workersSize = /** @type {number} */ (sysConfig.workersSize);
+  updateWorkerId(workersSize ? 0 : NaN);
+  const imports = getAppLoaders(true);
+  !workersSize && imports.push(...getAppLoaders(false));
 
   log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports.map(app => app.path)}]`);
 
@@ -126,8 +121,8 @@ const clusterPrimary = () => {
 
 /** Worker method to be used in the cluster script for `cluster.isWorker`. */
 const clusterWorker = () => {
-  globalState.workerId = cluster.worker?.id ?? -1;
-  const imports = getAppRunners(false);
+  updateWorkerId(cluster.worker?.id ?? -1);
+  const imports = getAppLoaders(false);
   log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports.map(app => app.path)}]`);
 
   importApps(imports);

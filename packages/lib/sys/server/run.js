@@ -2,14 +2,13 @@
 // @ts-check
 
 import fs from 'node:fs';
-import { globalState, log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
+import { log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
+import { getAppLoader } from '../run.js';
 import { runServer } from './server.js';
 
 // const fsP = fs.promises;
 
 /**
-@typedef {import('node:cluster').Worker & { id?: number }} Worker;
-@typedef {NodeJS.Process & { id?: number }} Process;
 @typedef {{
   baseDir: string;
   publicDir: string;
@@ -44,25 +43,26 @@ const defaults = {
   uploadLimit: 8e6,
 };
 
-/** @type {ServerConfig} */
-const config = hydrate(globalState.serverConfig, defaults);
+const appConfig = /** @type {ServerConfig} */ (getAppLoader('server').config);
+
+hydrate(appConfig, defaults);
 
 const env = getEnvironment();
-const baseFolder = config.baseDir || env.root + env.path;
+const baseFolder = appConfig.baseDir || env.root + env.path;
 
-const privateFolder = resolvePath(baseFolder, config.privateDir);
-const publicFolder = resolvePath(baseFolder, config.publicDir);
+const privateFolder = resolvePath(baseFolder, appConfig.privateDir);
+const publicFolder = resolvePath(baseFolder, appConfig.publicDir);
 
-const isSSL = config.protocol === 'https';
+const isSSL = appConfig.protocol === 'https';
 
 const options = {
-  ...config,
+  ...appConfig,
   baseFolder,
   privateFolder,
   publicFolder,
   isSSL,
-  cert: isSSL ? fs.readFileSync(privateFolder + config.sslCert) : null,
-  key: isSSL ? fs.readFileSync(privateFolder + config.sslKey) : null,
+  cert: isSSL ? fs.readFileSync(privateFolder + appConfig.sslCert) : null,
+  key: isSSL ? fs.readFileSync(privateFolder + appConfig.sslKey) : null,
 };
 
 // http://localhost:3000/Users/reyj/home/projects/apps/js/jrjs-template/packages/view
