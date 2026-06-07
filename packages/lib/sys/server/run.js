@@ -7,9 +7,30 @@ import { runServer } from './server.js';
 
 // const fsP = fs.promises;
 
+/**
+@typedef {import('node:cluster').Worker & { id?: number }} Worker;
+@typedef {NodeJS.Process & { id?: number }} Process;
+@typedef {{
+  baseDir: string;
+  publicDir: string;
+  privateDir: string;
+  protocol: string;
+  host: string;
+  port: number;
+  sslCert: string;
+  sslKey: string;
+  timeout: number;
+  clientsSize: number;
+  clientPortsSize: number;
+  largeThreshold: number;
+  uploadLimit: number;
+}} ServerConfig;
+*/
+
+/** @type {ServerConfig} */
 const defaults = {
   baseDir: '',
-  publicDir: './view',
+  publicDir: '../view',
   privateDir: '../../_ignore/store',
   protocol: 'http',
   host: '0.0.0.0', // '0.0.0.0', '127.0.0.1', 'localhost',
@@ -23,9 +44,8 @@ const defaults = {
   uploadLimit: 8e6,
 };
 
+/** @type {ServerConfig} */
 const config = hydrate(globalState.serverConfig, defaults);
-
-// config.logConfig ??= { name: 'app', level: 3 };
 
 const env = getEnvironment();
 const baseFolder = config.baseDir || env.root + env.path;

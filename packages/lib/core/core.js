@@ -15,7 +15,7 @@ author: javier.rey.eu@gmail.com
 @typedef {{ (...args: any[]): any, [key: string]: any }} FunctionObject;
 */
 
-/** Global state object. @type {PlainObject} */
+/** A persistent global state container. @type {PlainObject} */
 export const globalState = {};
 
 /** AsyncFunction constructor (no globalThis.AsyncFunction defined). */
@@ -514,8 +514,8 @@ export const parseQuery = (query, options) => {
     item = String(item ?? ''); aux = item.indexOf('=');
     const key = decodeURIComponent(item.substring(0, aux)).trim() || String(ind);
     const value = decodeURIComponent(item.slice(aux + 1)).trim();
-    const parse = value[0] + value[1] + value.at(-1) === '${}';
-    object[key] = parse ? parseValue(value.slice(2, -1), options.ctx, options.dot) : value;
+    const pv = value[0] + value[1] + value.at(-1) === '${}';
+    object[key] = pv ? parseValue(value.slice(2, -1), options.ctx, options.dot) : value;
   });
   return object;
 };

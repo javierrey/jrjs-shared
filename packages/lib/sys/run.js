@@ -1,5 +1,5 @@
-// sys/run.js
-// _@ts-check
+// sys/run.js (cluster)
+// @ts-check
 
 import cluster from 'node:cluster';
 import { globalState, hydrate, log } from '../core/core.js';
@@ -7,19 +7,49 @@ import { globalState, hydrate, log } from '../core/core.js';
 /**
 @typedef {import('node:cluster').Worker & { id?: number }} Worker;
 @typedef {NodeJS.Process & { id?: number }} Process;
+@typedef {import('../core/core.js').PlainObject} PlainObject;
+@typedef {{
+  name: string;
+  path: string;
+  primaryOnly?: boolean;
+  requires?: string[];
+  state?: PlainObject;
+  config: PlainObject;
+}} AppRunner;
+@typedef {{
+  workersSize: number;
+  base: string;
+  apps: AppRunner[];
+}} PrimaryConfig;
 */
+
+/** Unique running process worker id */
+globalState.workerId ??= NaN;
 
 const defaults = {
   workersSize: 1,
   base: '',
-  primaryApps: [],
-  workerApps: [],
+  apps: [],
 };
 
-const config = hydrate(globalState.processConfig, defaults);
+/** @type {PrimaryConfig} */
+const config = hydrate(globalState.primaryConfig, defaults);
 
-/** Unique running process worker id */
-globalState.workerId ??= NaN;
+/** Get config app runner. */
+// const getAppRunner = (name) => config.apps.find((app) => app.name === name);
+
+/** Get app runners for the cluster type. */
+const getAppRunners = (primary = false) => config.apps.filter((app) => primary ? app.primaryOnly : !app.primaryOnly);
+
+/** Import apps from app runners. @param {AppRunner[]} imports @returns {Promise<void>} */
+const importApps = async (imports) => {
+  try {
+    for (const app of imports) {
+      globalState[app.name + 'Config'] = app.config;
+      await import(config.base + app.path);
+    }
+  } catch (err) { log.error(`Error in importApps`, err); }
+};
 
 /** @param {number} id @return {number} */
 // const getWorkerPid = (id) => cluster.workers?.[id]?.process?.pid ?? -1;
@@ -68,12 +98,11 @@ const onMessage = (wrk = process, msg = '') => {
 /** Primary method to be used in the cluster script for `cluster.isPrimary`. */
 const clusterPrimary = () => {
   const workersSize = /** @type {number} */ (config.workersSize);
-  const imports = /** @type {string[]} */ (config.primaryApps);
-
   globalState.workerId = workersSize ? 0 : NaN;
-  if (!workersSize) { imports.push(.../** @type {string[]} */ (config.workerApps)); }
+  const imports = getAppRunners(true);
+  !workersSize && imports.push(...getAppRunners(false));
 
-  log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports}]`);
+  log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports.map(app => app.path)}]`);
 
   for (let i = 0; i < workersSize; i++) { cluster.fork(); }
 
@@ -92,21 +121,17 @@ const clusterPrimary = () => {
     log.info(`worker ${getWorkerId(process.pid)} (${worker.process.pid}) message: ${message}`);
   });
 
-  try {
-    for (const appPath of imports) { import(config.base + appPath); }
-  } catch (err) { log.error(`Error in imports`, err); }
+  importApps(imports);
 };
 
 /** Worker method to be used in the cluster script for `cluster.isWorker`. */
 const clusterWorker = () => {
   globalState.workerId = cluster.worker?.id ?? -1;
-  const imports = /** @type {string[]} */ (config.workerApps);
-  log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports}]`);
+  const imports = getAppRunners(false);
+  log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports.map(app => app.path)}]`);
 
-  try {
-    for (const appPath of imports) { import(config.base + appPath); }
-  } catch (err) { log.error(`Error in imports`, err); }
+  importApps(imports);
 };
 
-/** main method */
+/** Cluster method. */
 cluster.isPrimary ? clusterPrimary() : clusterWorker();

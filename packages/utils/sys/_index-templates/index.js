@@ -1,7 +1,7 @@
 // sys/index.js
 // @ts-check
 
-// import globalConfig from './index.jso.js' with { type: 'json' };
+// import globalConfig from './index.json' with { type: 'json' };
 // globalThis.globalConfig = globalConfig;
 
 globalThis.globalConfig = {
@@ -13,7 +13,7 @@ globalThis.globalConfig = {
   },
   serverConfig: {
     baseDir: '',
-    publicDir: './view',
+    publicDir: '../view',
     privateDir: '../../_ignore/store',
 
     protocol: 'http',

@@ -7,8 +7,10 @@ import assert from 'node:assert';
 import { spawn } from 'node:child_process';
 
 import {
-  log,
+  log, globalState,
 } from '../core/core.js';
+
+globalState.primaryConfig ??= {};
 
 export * as fs from 'node:fs';
 export const fsP = fs.promises;
