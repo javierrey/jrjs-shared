@@ -97,7 +97,7 @@ const clusterPrimary = () => {
   const imports = getAppLoaders(true);
   !workersSize && imports.push(...getAppLoaders(false));
 
-  log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports.map(app => app.path)}]`);
+  log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, workersSize ${workersSize}, [${imports.map(app => app.name)}]`);
 
   for (let i = 0; i < workersSize; i++) { cluster.fork(); }
 
@@ -123,7 +123,7 @@ const clusterPrimary = () => {
 const clusterWorker = () => {
   updateWorkerId(cluster.worker?.id ?? -1);
   const imports = getAppLoaders(false);
-  log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports.map(app => app.path)}]`);
+  log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports.map(app => app.name)}]`);
 
   importApps(imports);
 };
