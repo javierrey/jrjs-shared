@@ -1,13 +1,6 @@
 // server/run.js
 // @ts-check
 
-import fs from 'node:fs';
-import { log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
-import { getAppLoader } from '../run.js';
-import { runServer } from './server.js';
-
-// const fsP = fs.promises;
-
 /**
 @typedef {{
   baseDir: string;
@@ -26,6 +19,13 @@ import { runServer } from './server.js';
 }} ServerConfig;
 */
 
+import fs from 'node:fs';
+import { log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
+import { getAppLoader } from '../run.js';
+import { runServer } from './server.js';
+
+// const fsP = fs.promises;
+
 /** @type {ServerConfig} */
 const defaults = {
   baseDir: '',
@@ -43,7 +43,8 @@ const defaults = {
   uploadLimit: 8e6,
 };
 
-const appConfig = /** @type {ServerConfig} */ (getAppLoader('server').config);
+const appName = 'server';
+const appConfig = /** @type {ServerConfig} */ (getAppLoader(appName).config);
 
 hydrate(appConfig, defaults);
 

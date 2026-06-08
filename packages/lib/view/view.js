@@ -1,31 +1,25 @@
 // view.js, DOM
 // _@ts-check
 
-import {
-  log,
-} from '../core/core.js';
-
-/* Types functionality: */
-
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;
 @typedef {Record<string, any>} ViewConfig;
 */
 
+import {
+  log,
+} from '../core/core.js';
+
 export * from '../core/core.js';
 
-/** View primary config. @type {ViewConfig} */
-export const viewConfig = {};
-
-/* * */
+/** View primary config. */
+export const viewConfig = /** @type {ViewConfig} */ ({});
 
 /** Safe element selector shortcuts. */
 export const ge = (id) => document.getElementById(id);
 export const gt = (tag, el = document) => el?.getElementsByTagName?.(tag);
 export const qs = (sel, el = document) => { try { return el?.querySelector?.(sel); } catch {} };
 export const qa = (sel, el = document) => { try { return el?.querySelectorAll?.(sel); } catch {} };
-
-/* * */
 
 /**
 Loads CSS code from a URL `href`, or from a given text, if `code` is not null.

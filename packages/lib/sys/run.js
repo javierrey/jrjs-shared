@@ -1,10 +1,6 @@
 // sys/run.js (cluster)
 // @ts-check
 
-import cluster from 'node:cluster';
-import { globalState, hydrate, log } from '../core/core.js';
-import { sysConfig } from './sys.js';
-
 /**
 @typedef {import('node:cluster').Worker & { id?: number }} Worker;
 @typedef {NodeJS.Process & { id?: number }} Process;
@@ -12,6 +8,10 @@ import { sysConfig } from './sys.js';
 @typedef {import('./sys.js').AppLoader} AppLoader;
 @typedef {import('./sys.js').SysConfig} SysConfig;
 */
+
+import cluster from 'node:cluster';
+import { globalState, hydrate, log } from '../core/core.js';
+import { sysConfig } from './sys.js';
 
 /** @type {SysConfig} */
 const defaults = {
@@ -40,7 +40,7 @@ const importApps = async (imports) => {
   } catch (err) { log.error(`Error in importApps`, err); }
 };
 
-/* * */
+/* Cluster functionality: */
 
 /** @param {number} id @return {void} */
 const updateWorkerId = (id) => { globalState.workerId = id; };

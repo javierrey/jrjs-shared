@@ -1,17 +1,6 @@
 // sys.js
 // _@ts-check
 
-import fs from 'node:fs';
-import path from 'node:path';
-import assert from 'node:assert';
-import { spawn } from 'node:child_process';
-
-import {
-  log,
-} from '../core/core.js';
-
-/* Types functionality: */
-
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;
 @typedef {{
@@ -29,12 +18,21 @@ import {
 }} SysConfig;
 */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert';
+import { spawn } from 'node:child_process';
+
+import {
+  log,
+} from '../core/core.js';
+
 export * as fs from 'node:fs';
 export const fsP = fs.promises;
 export * from '../core/core.js';
 
-/** System primary config. @type {SysConfig} */
-export const sysConfig = {};
+/** System primary config. */
+export const sysConfig = /** @type {SysConfig} */ ({});
 
 /** Process Arguments functionality: */
 
