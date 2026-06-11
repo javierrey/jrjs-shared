@@ -2,26 +2,12 @@
 // @ts-check
 
 /**
-@typedef {{
-  baseDir: string;
-  publicDir: string;
-  privateDir: string;
-  protocol: string;
-  host: string;
-  port: number;
-  sslCert: string;
-  sslKey: string;
-  timeout: number;
-  clientsSize: number;
-  clientPortsSize: number;
-  largeThreshold: number;
-  uploadLimit: number;
-}} ServerConfig;
+@typedef {import('./server.js').ServerConfig} ServerConfig;
 */
 
 import fs from 'node:fs';
 import { log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
-import { getAppLoader } from '../run.js';
+import { getAppLoader } from '../cluster.js';
 import { runServer } from './server.js';
 
 // const fsP = fs.promises;
@@ -70,4 +56,4 @@ const options = {
 // http://localhost:3000/Users/reyj/home/projects/apps/js/node-lab/www/plot-line-curve-svg/mathfun-svg/mathfun-svg.html
 const server = runServer(options);
 
-log.info(`${!server ? 'KO' : 'OK'}: [${Object.keys(options)}]`);
+log.info(`server/run ${!server ? 'KO' : 'OK'}: [${Object.keys(options)}]`);

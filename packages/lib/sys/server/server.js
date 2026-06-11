@@ -1,6 +1,24 @@
 // server.js
 // _@ts-check
 
+/**
+@typedef {{
+  baseDir: string;
+  publicDir: string;
+  privateDir: string;
+  protocol: string;
+  host: string;
+  port: number;
+  sslCert: string;
+  sslKey: string;
+  timeout: number;
+  clientsSize: number;
+  clientPortsSize: number;
+  largeThreshold: number;
+  uploadLimit: number;
+}} ServerConfig;
+*/
+
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';

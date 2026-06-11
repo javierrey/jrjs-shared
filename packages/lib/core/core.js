@@ -15,7 +15,7 @@ author: javier.rey.eu@gmail.com
 
 /* Types functionality: */
 
-/** General purpose container for persistent values. */
+/** Global persistence container for clustered environments. */
 export const globalState = /** @type {PlainObject} */ ({});
 
 /** AsyncFunction constructor (no globalThis.AsyncFunction defined). */
@@ -94,9 +94,9 @@ public static members:
 */
 export const Log = (config = {}) => {
   const typename = 'Log', CONSOLE = console;
+  const METHODS = ['log', 'error', 'warn', 'info', 'debug'], DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   config = typeof config === 'string' ? { name: config } : typeof config === 'number' ? { level: config } : config;
   config = Object.seal({ name: '', level: 3, trace: 0, pretty: 0, limit: 1e4, redact: ['pass', 'auth'], ...config });
-  const METHODS = ['log', 'error', 'warn', 'info', 'debug'], DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   const isStr = (v) => v?.constructor === String;
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
   const isTra = (v) => (isObj(v) || v?.every?.(isObj)) && v !== globalThis;
@@ -104,6 +104,10 @@ export const Log = (config = {}) => {
   const trav = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? trav(v) : isStr(v) && redact(o, k));
   const print = (t) => {
     if (isTra(t)) {
+      try {
+        const s = JSON.stringify(t);
+        if (config.redact.some((r) => new RegExp(`["-_.]${r}.*":`, 'i').test(s))) { t = JSON.parse(s); }
+      } catch {}
       trav(t); if (config.pretty) try { t = JSON.stringify(t, null, 2).replace(/(?:\\[\\ntfv])+/g, ' '); } catch {}
     }
     if (config.limit && isStr(t?.[0])) {
@@ -123,7 +127,7 @@ export const Log = (config = {}) => {
     if (!config.level && level) return;
     const tron = config.trace && (config.trace >= level || level > 3);
     const stack = trace(level), at = (stack[0] ?? '').trim().replace(/\(|.*\/(?=\S+\/\S)|\)/g, '');
-    const wid = globalState.workerId, worker = isNaN(wid) ? '' : !wid ? ' PRI' : ` W${wid}`;
+    const wid = globalState.workerId, worker = isNaN(wid) ? '' : !wid ? ' P0' : ` W${wid}`;
     const name = config.name ? ` "${config.name}"` : '';
     CONSOLE[method](`\n[${method.toUpperCase()} ${renderUTC()}]${worker}${name} @${at}`); args.forEach(print);
     tron && stack.length > 1 && CONSOLE.log('TRACE:\n' + stack.slice(1).join('\n'));

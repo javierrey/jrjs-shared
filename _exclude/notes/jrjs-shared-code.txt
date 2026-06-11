@@ -160,7 +160,7 @@ const addAppConfig = (app) => {
 globalThis.globalConfig = {
   processConfig: {
     workerId: NaN,
-    workersSize: 1, // 0, 1, 2, ... os.cpus().length
+    clusterSize: 1, // 0, 1, 2, ... os.cpus().length
     primaryApps: [],
     workerApps: ['jrjs-shared/packages/lib/sys/run.js'],
     ...JSON.parse(process.argv.slice(2).at(-1) || '{}'),

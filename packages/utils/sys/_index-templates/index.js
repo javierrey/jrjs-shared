@@ -6,7 +6,7 @@
 
 globalThis.globalConfig = {
   processConfig: {
-    workersSize: 1, // 0, 1, 2, ... os.cpus().length
+    clusterSize: 1, // 0, 1, 2, ... os.cpus().length
     primaryApps: [],
     workerApps: ['./lib/sys/server/run.js'],
     ...JSON.parse(process.argv.slice(2).at(-1) || '{}'),

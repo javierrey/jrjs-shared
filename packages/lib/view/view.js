@@ -2,8 +2,7 @@
 // _@ts-check
 
 /**
-@typedef {import('../core/core.js').PlainObject} PlainObject;
-@typedef {Record<string, any>} ViewConfig;
+@typedef {import('../core.js').PlainObject} PlainObject;
 */
 
 import {
@@ -13,7 +12,7 @@ import {
 export * from '../core/core.js';
 
 /** View primary config. */
-export const viewConfig = /** @type {ViewConfig} */ ({});
+export const viewConfig = /** @type {PlainObject} */ ({});
 
 /** Safe element selector shortcuts. */
 export const ge = (id) => document.getElementById(id);

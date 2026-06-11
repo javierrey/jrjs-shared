@@ -3,19 +3,6 @@
 
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;
-@typedef {{
-  name: string;
-  path: string;
-  primary?: boolean;
-  requires?: string[];
-  state?: PlainObject;
-  config: PlainObject;
-}} AppLoader;
-@typedef {{
-  workersSize: number;
-  base: string;
-  apps: AppLoader[];
-}} SysConfig;
 */
 
 import fs from 'node:fs';
@@ -32,7 +19,7 @@ export const fsP = fs.promises;
 export * from '../core/core.js';
 
 /** System primary config. */
-export const sysConfig = /** @type {SysConfig} */ ({});
+export const sysConfig = /** @type {PlainObject} */ ({});
 
 /** Process Arguments functionality: */
 
