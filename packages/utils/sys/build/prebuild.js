@@ -1,13 +1,14 @@
-// _@ts-check // prebuild.js
+// prebuild.js
+// @ts-check
 
-import { log, getNamedArgumentValue, copyDir, symlinkDir } from '../../../lib/sys/sys.js';
-
-const argv = process.argv.slice(2);
+import {
+  getNamedArgumentValue, hasNamedArgument, copyDir, symlinkDir,
+} from '../../../lib/sys/sys.js';
 
 const origBase = './node_modules/jrjs-shared/packages';
 const destBase = './packages';
 
-const method = argv[0] === 'symlink' ? symlinkDir : copyDir; // copy, symlink
+const method = hasNamedArgument('symlink') ? symlinkDir : copyDir; // copy, symlink
 
 const importsCore = getNamedArgumentValue('imports-core')?.split(',').filter(Boolean) ?? [];
 const importsView = getNamedArgumentValue('imports-view')?.split(',').filter(Boolean) ?? [];

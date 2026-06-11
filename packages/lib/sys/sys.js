@@ -23,6 +23,8 @@ export const sysConfig = /** @type {PlainObject} */ ({});
 
 /** Process Arguments functionality: */
 
+export const hasNamedArgument = (name) => !!process.argv.slice(2).find((a) => new RegExp(`^-{0,2}${name}$`).test(a));
+
 export const getNamedArgumentValue = (name) => {
   const arg = process.argv.slice(2).find((a) => new RegExp(`^-{0,2}${name}=`).test(a) && !name.includes('='));
   return arg ? arg.slice(arg.indexOf('=') + 1).replace(/^"|"$/g, '') : undefined;
