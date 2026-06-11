@@ -306,6 +306,12 @@ export const unsanitize = (text) => text?.replace(/&#\d+;/g, (m) => String.fromC
 
 /* Object transformations and String parsers: */
 
+/** Safely stringifies a value to JSON, returning undefined on failure. */
+export const jsonStringify = (v) => { try { return JSON.stringify(v); } catch { return undefined; } };
+
+/** Safely parses a JSON string, returning undefined on failure. */
+export const jsonParse = (s) => { try { return JSON.parse(s); } catch { return undefined; } };
+
 /**
 Parses a code expression by generating and invoking a function.
 @param {string} exp - The expression to parse.
