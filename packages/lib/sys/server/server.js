@@ -2,6 +2,12 @@
 // _@ts-check
 
 /**
+@typedef {import('node:http').Server} Server
+@typedef {
+  (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>
+} RequestListener;
+@typedef {import('../../core/core.js').PlainObject} PlainObject;
+@typedef {import('../../core/core.js').FunctionObject} FunctionObject;
 @typedef {{
   baseDir: string;
   publicDir: string;
@@ -17,21 +23,32 @@
   largeThreshold: number;
   uploadLimit: number;
 }} ServerConfig;
+@typedef {{
+  baseFolder: string;
+  privateFolder: string;
+  publicFolder: string;
+  isSSL: boolean;
+  cert: string | null;
+  key: string | null;
+}} ResolvedServerConfig;
 */
 
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
+import fs from 'node:fs';
 import {
   Log, toStr, isNul, isJso, isBin, urlComponents, parseQuery, getSample,
   fileSize, readFile, readStream,
+  getEnvironment,
+  resolvePath,
 } from '../sys-x.js';
 
 /* server core: */
 
 const log = Log({ name: 'server', level: 4 });
 
-const config = {};
+const config = /** @type {PlainObject & ServerConfig & ResolvedServerConfig} */ ({});
 const clients = [];
 
 const getContentType = (filename, content) => {
@@ -213,6 +230,7 @@ const responder = async (response, status, headers, body) => { // @todo status =
   response.writeHead(status ?? 0); response.end(body ?? '');
 };
 
+/** @type {RequestListener} */
 const resolver = async (request, response) => {
   const empty = resolveEmpty(request); if (empty) { return responder(response, empty.status); }
   const resource = await resolveResource(request);
@@ -228,27 +246,55 @@ const resolver = async (request, response) => {
   logConnection({ request, resource, error, status, headers, body });
 };
 
+/** @param {ServerConfig} config @return {ServerConfig & ResolvedServerConfig} */
+const resolveConfig = (config) => {
+  const env = getEnvironment();
+  const baseFolder = config.baseDir || env.root + env.path;
+
+  const privateFolder = resolvePath(baseFolder, config.privateDir);
+  const publicFolder = resolvePath(baseFolder, config.publicDir);
+
+  const isSSL = config.protocol === 'https';
+
+  /** @type {ResolvedServerConfig} */
+  const resolvedConfig = {
+    baseFolder,
+    privateFolder,
+    publicFolder,
+    isSSL,
+    cert: isSSL ? fs.readFileSync(privateFolder + config.sslCert, 'utf-8') : null,
+    key: isSSL ? fs.readFileSync(privateFolder + config.sslKey, 'utf-8') : null,
+  };
+
+  return { ...config, ...resolvedConfig };
+};
+
 /**
-Creates and runs an `http` or `https` nodejs server, `http` or `https`.
-Accepts a server listener and a server options object.
+Creates and runs an `http` or `https` nodejs server.
+Accepts a server listener and a server config object.
 The listener can also be an express-like server application.
-Arguments are optional: `runServer()` will start a server on `http://localhost:3000`.
+Both arguments are optional: `runServer(config)` and `runServer()` are also valid.
+@param {(RequestListener & FunctionObject) | (ServerConfig & PlainObject) | undefined} listener
+@param {(ServerConfig & PlainObject) | undefined} [config]
+@return {Server}
 */
-export const runServer = (listener, options) => {
-  options ??= {};
-  if (!(listener instanceof Function)) { Object.assign(options, listener); listener = resolver;
-  } else { Object.assign(options, listener.options); }
-  Object.entries(options.logConfig ?? {}).forEach(([k, v]) => log.config[k] = v);
-  options.isSSL ??= Boolean(options.cert && options.key);
-  options.protocol ??= options.isSSL ? 'https' : 'http';
-  options.host ??= '0.0.0.0'; options.port ??= 3000;
-  options.timeout ??= 50e3; options.clientsSize ??= 1e3; options.clientPortsSize ??= 16;
-  options.largeThreshold ??= 2e6; options.uploadLimit ??= 8e6;
-  Object.assign(config, options);
-  const httpModule = options.isSSL ? https : http; // @ts-expect-error:
-  const server = httpModule.createServer(options, listener); server.timeout = options.timeout;
-  server.listen(options.port, options.host, () => {
-    log.info(`Server listening on ${options.protocol}://${options.host}:${options.port}`);
+export const runServer = (listener, config) => {
+  config ??= /** @type {ServerConfig & PlainObject} */ ({});
+  if (!(listener instanceof Function)) { Object.assign(config, listener); listener = resolver;
+  } else { Object.assign(config, listener.config); }
+  config = resolveConfig(config);
+  Object.entries(config.logConfig ?? {}).forEach(([k, v]) => log.config[k] = v);
+  config.isSSL ??= Boolean(config.cert && config.key);
+  config.protocol ??= config.isSSL ? 'https' : 'http';
+  config.host ??= '0.0.0.0'; config.port ??= 3000;
+  config.timeout ??= 50e3; config.clientsSize ??= 1e3; config.clientPortsSize ??= 16;
+  config.largeThreshold ??= 2e6; config.uploadLimit ??= 8e6;
+  Object.assign(config, config);
+  const httpModule = config.isSSL ? https : http; // @ts-expect-error:
+  const server = /** @type {Server} */ (httpModule.createServer(config, listener));
+  server.timeout = config.timeout;
+  server.listen(config.port, config.host, () => {
+    log.info(`Server listening on ${config.protocol}://${config.host}:${config.port}`);
   });
   return server;
 };

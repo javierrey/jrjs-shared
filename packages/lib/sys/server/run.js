@@ -3,10 +3,10 @@
 
 /**
 @typedef {import('./server.js').ServerConfig} ServerConfig;
+@typedef {import('./server.js').ResolvedServerConfig} ResolvedServerConfig;
 */
 
-import fs from 'node:fs';
-import { log, resolvePath, getEnvironment, hydrate } from '../../core/core.js';
+import { log, hydrate } from '../../core/core.js';
 import { getAppLoader } from '../cluster.js';
 import { runServer } from './server.js';
 
@@ -34,26 +34,6 @@ const appConfig = /** @type {ServerConfig} */ (getAppLoader(appName).config);
 
 hydrate(appConfig, defaults);
 
-const env = getEnvironment();
-const baseFolder = appConfig.baseDir || env.root + env.path;
+const server = runServer(appConfig);
 
-const privateFolder = resolvePath(baseFolder, appConfig.privateDir);
-const publicFolder = resolvePath(baseFolder, appConfig.publicDir);
-
-const isSSL = appConfig.protocol === 'https';
-
-const options = {
-  ...appConfig,
-  baseFolder,
-  privateFolder,
-  publicFolder,
-  isSSL,
-  cert: isSSL ? fs.readFileSync(privateFolder + appConfig.sslCert) : null,
-  key: isSSL ? fs.readFileSync(privateFolder + appConfig.sslKey) : null,
-};
-
-// http://localhost:3000/Users/reyj/home/projects/apps/js/jrjs-template/packages/view
-// http://localhost:3000/Users/reyj/home/projects/apps/js/node-lab/www/plot-line-curve-svg/mathfun-svg/mathfun-svg.html
-const server = runServer(options);
-
-log.info(`server/run ${!server ? 'KO' : 'OK'}: [${Object.keys(options)}]`);
+log.info(`server/run ${!server ? 'KO' : 'OK'}: [${Object.keys(appConfig)}]`);

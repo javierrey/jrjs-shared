@@ -25,14 +25,17 @@ export const AsyncFunction = (async () => {}).constructor;
 
 export const isNul = (v) => [undefined, null, NaN].includes(v);
 export const isEmp = (v) => { for (const p in v) return false; return true; };
+
 export const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
 export const isArr = (v) => !!v?.[Symbol.iterator] && v.constructor !== String;
+export const isSca = (v) => !v || [Boolean, Number, String, BigInt].includes(v.constructor);
 export const isPri = (v) => !v || !(v instanceof Object || !v.constructor);
+
 export const isFun = (v) => typeof v === 'function';
 export const isNum = (v) => parseFloat(v) === Number(v);
 export const isInt = (v) => Math.floor(parseFloat(v)) === Number(v);
 export const isStr = (v) => v?.constructor === String;
-export const isSca = (v) => !v || [Boolean, Number, String, BigInt].includes(v.constructor);
+
 export const isXml = (v) => /^\s*</.test(v) && />\s*$/.test(v);
 export const isJso = (v) => /^\s*\[?\s*\{/.test(v) && /\}\s*\]?\s*$/.test(v);
 export const isBuf = (v) => typeof v?.slice === 'function' && 'byteLength' in v;
@@ -47,7 +50,7 @@ export const toSam = (v) => {
   return 'byteLength' in s ? new TextDecoder().decode(s) : s;
 };
 
-export const isTra = (v) => isObj(v) || v?.every?.(isObj); // isObj(v?.[0]) // && isObj(v.at(-1))
+export const isTra = (v) => isObj(v) || !!v?.every?.(isObj); // isObj(v?.[0]) // && isObj(v.at(-1))
 export const isBin = (v) => toSam(v).includes('\x00');
 
 export const toSca = (v) => {
@@ -99,7 +102,7 @@ export const Log = (config = {}) => {
   config = Object.seal({ name: '', level: 3, trace: 0, pretty: 0, limit: 1e4, redact: ['pass', 'auth'], ...config });
   const isStr = (v) => v?.constructor === String;
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => (isObj(v) || v?.every?.(isObj)) && v !== globalThis;
+  const isTra = (v) => (isObj(v) || !!v?.every?.(isObj)) && v !== globalThis;
   const redact = (o, k) => config.redact.some((r) => new RegExp(`(^|[-_.])${r}`, 'i').test(k)) && (o[k] = '*');
   const trav = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? trav(v) : isStr(v) && redact(o, k));
   const print = (t) => {
@@ -356,7 +359,7 @@ export const partial = (obj, flt) => {
 /** Clones a plain object or array recursively. Non-plain object properties are assigned by reference. */
 export const clone = (obj) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => (isObj(v) || v?.every?.(isObj)) && v !== globalThis;
+  const isTra = (v) => (isObj(v) || !!v?.every?.(isObj)) && v !== globalThis;
   const map = (v) => typeof v?.slice === 'function' && !v.substring ? v.slice() : v;
   if (!isTra(obj)) { return map(obj); }
   const emp = (v) => typeof v?.join === 'function' ? [] : {};
@@ -372,7 +375,7 @@ export const clone = (obj) => {
 /** Remaps a plain object or array recursively calling a mapping function on each non-traversable property. */
 export const remap = (obj, map) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => (isObj(v) || v?.every?.(isObj)) && v !== globalThis;
+  const isTra = (v) => (isObj(v) || !!v?.every?.(isObj)) && v !== globalThis;
   const travel = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? travel(v) : map(o, k, obj));
   map instanceof Function && isTra(obj) && travel(obj);
   return obj;
