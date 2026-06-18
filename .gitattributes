@@ -1,2 +1,2 @@
-* linguist-vendored
-*.js linguist-vendored=false
+* text=auto linguist-vendored
+*.js text eol=lf linguist-vendored=false
