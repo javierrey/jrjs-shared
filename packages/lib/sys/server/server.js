@@ -69,7 +69,7 @@ const getContentType = (filename, content) => {
   : /^gif$/i.test(ext) ? 'image/gif'
   : /^(mp3|ogg)$/i.test(ext) ? 'audio/mp3'
   : /^(mp4|m4v|mpe?g|avi|mov)$/i.test(ext) ? 'video/mp4'
-  : /^wav$/i.test(ext) ? 'audio/x-wav'
+  : /^wav$/i.test(ext) ? 'audio/wav'
   : /^woff2?$/i.test(ext) ? 'font/woff2'
   : /^vtt$/i.test(ext) ? 'text/vtt'
   : /^dae$/i.test(ext) ? 'model/vnd.collada+xml'
