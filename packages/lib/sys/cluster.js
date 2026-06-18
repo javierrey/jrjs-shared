@@ -21,7 +21,7 @@
 */
 
 import cluster from 'node:cluster';
-import { globalState, log, sysConfig } from './sys.js';
+import { globalContext, log, sysConfig } from './sys.js';
 
 /* Apps functionality: */
 
@@ -46,12 +46,12 @@ const importApps = async (imports) => {
 /* Cluster functionality: */
 
 /** @param {number} id @return {void} */
-const updateWorkerId = (id) => { globalState.workerId = id; };
-updateWorkerId(globalState.workerId ?? NaN);
+const updateWorkerId = (id) => { globalContext.workerId = id; };
+updateWorkerId(globalContext.workerId ?? NaN);
 
 /** @param {number} id @return {void} */
-const updateLatestWorkerId = (id) => { globalState.latestWorkerId = id; };
-updateLatestWorkerId(globalState.latestWorkerId ?? NaN);
+const updateLatestWorkerId = (id) => { globalContext.latestWorkerId = id; };
+updateLatestWorkerId(globalContext.latestWorkerId ?? NaN);
 
 /** @param {number} id @return {number} */
 // const getWorkerPid = (id) => cluster.workers?.[id]?.process?.pid ?? -1;
@@ -104,7 +104,7 @@ const clusterPrimary = () => {
   const imports = getAppLoaders(true);
   !clusterSize && imports.push(...getAppLoaders(false));
 
-  log.info(`Primary id ${globalState.workerId}, pid ${process.pid}, clusterSize ${clusterSize}, [${imports.map(app => app.name)}]`);
+  log.info(`Primary id ${globalContext.workerId}, pid ${process.pid}, clusterSize ${clusterSize}, [${imports.map(app => app.name)}]`);
 
   for (let i = 0; i < clusterSize; i++) { cluster.fork(); }
 
@@ -130,7 +130,7 @@ const clusterPrimary = () => {
 const clusterWorker = () => {
   updateWorkerId(cluster.worker?.id ?? -1);
   const imports = getAppLoaders(false);
-  log.info(`Worker id ${globalState.workerId}, pid ${process.pid}, [${imports.map(app => app.name)}]`);
+  log.info(`Worker id ${globalContext.workerId}, pid ${process.pid}, [${imports.map(app => app.name)}]`);
 
   importApps(imports);
 };

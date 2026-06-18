@@ -1,5 +1,10 @@
-// view-x.js, DOM
+// lib/.../view-x.js, DOM
 // _@ts-check
+
+/**
+@typedef {import('./view.js').PlainObject} PlainObject;
+@typedef {import('./view.js').ViewContext} ViewContext;
+*/
 
 import {
   callFetch, insertHtml, rebaseLinks,

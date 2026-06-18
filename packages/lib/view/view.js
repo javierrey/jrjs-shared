@@ -1,8 +1,9 @@
-// view.js, DOM
+// lib/.../view.js, DOM
 // _@ts-check
 
 /**
-@typedef {import('../core.js').PlainObject} PlainObject;
+@typedef {import('../core/core.js').PlainObject} PlainObject;
+@typedef {Window & typeof globalThis | WorkerGlobalScope} ViewContext;
 */
 
 import {

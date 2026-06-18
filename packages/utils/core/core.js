@@ -1,5 +1,9 @@
-// utils/core.js
+// utils/.../core.js
 // _@ts-check
+
+/**
+@typedef {import('../../lib/core/core-x.js').PlainObject} PlainObject;
+*/
 
 import {
   //

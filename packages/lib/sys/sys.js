@@ -1,8 +1,9 @@
-// sys.js
+// lib/.../sys.js, NodeJS
 // _@ts-check
 
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;
+@typedef {typeof globalThis & NodeJS.Global} SysContext;
 */
 
 import fs from 'node:fs';

@@ -1,5 +1,10 @@
-// sys-x.js
+// lib/.../sys-x.js
 // _@ts-check
+
+/**
+@typedef {import('./sys.js').PlainObject} PlainObject;
+@typedef {import('./sys.js').SysContext} SysContext;
+*/
 
 import {
   // 

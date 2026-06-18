@@ -1,5 +1,10 @@
-// utils/view.js, DOM
+// utils/.../view.js, DOM
 // _@ts-check
+
+/**
+@typedef {import('../core/core.js').PlainObject} PlainObject;
+@typedef {import('../../lib/view/view-x.js').ViewContext} ViewContext;
+*/
 
 import {
   //

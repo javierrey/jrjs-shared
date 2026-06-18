@@ -2,9 +2,10 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "WebWorker"],
     "types": ["node"],
     "typeRoots": ["./packages/imports/sys/dev_modules/@types"],
-    "target": "ESNext",
     "allowJs": true,
     "maxNodeModuleJsDepth": 2,
     "declaration": true,
@@ -19,6 +20,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
+  "files": ["globals.d.ts"],
   "include": ["**/*"],
   "exclude": [
     "_exclude",

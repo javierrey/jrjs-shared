@@ -1,5 +1,9 @@
-// core-x.js
+// lib/.../core-x.js
 // _@ts-check
+
+/**
+@typedef {import('./core.js').PlainObject} PlainObject;
+*/
 
 import {
   isBin, isTra, toEmp, toSca, toStr, REX as REX_base,
