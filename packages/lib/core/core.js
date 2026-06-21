@@ -309,11 +309,21 @@ export const unsanitize = (text) => text?.replace(/&#\d+;/g, (m) => String.fromC
 
 /* Object transformations and String parsers: */
 
-/** Safely stringifies a value to JSON, returning undefined on failure. */
-export const jsonStringify = (v) => { try { return JSON.stringify(v); } catch { return undefined; } };
+/**
+Safely stringifies a value to JSON, returning undefined on failure.
+Replacer and indentation are optional. @param {any} v
+*/
+export const jsonStringify = (v, r = null, i = 0) => {
+  try { return JSON.stringify(v, r, i); } catch { return undefined; }
+};
 
-/** Safely parses a JSON string, returning undefined on failure. */
-export const jsonParse = (s) => { try { return JSON.parse(s); } catch { return undefined; } };
+/**
+Safely parses a JSON string, returning undefined on failure.
+Reviver is optional. @param {string} s
+*/
+export const jsonParse = (s, r = undefined) => {
+  try { return JSON.parse(s, r); } catch { return undefined; }
+};
 
 /**
 Parses a code expression by generating and invoking a function.
