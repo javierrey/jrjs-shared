@@ -3,7 +3,7 @@
 
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;
-@typedef {Window & typeof globalThis | WorkerGlobalScope} ViewContext;
+@typedef {typeof globalThis & Window | WorkerGlobalScope} ViewContext;
 */
 
 import {
