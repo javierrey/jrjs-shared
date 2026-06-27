@@ -1,9 +1,9 @@
 // lib/.../sys.js, NodeJS
-// _@ts-check
+// @ts-check
 
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;
-@typedef {typeof globalThis & NodeJS.Global} SysContext;
+@typedef {typeof globalThis} SysContext;
 */
 
 import fs from 'node:fs';
@@ -24,11 +24,17 @@ export const sysConfig = /** @type {PlainObject} */ ({});
 
 /** Process Arguments functionality: */
 
-export const hasNamedArgument = (name) => !!process.argv.slice(2).find((a) => new RegExp(`^-{0,2}${name}$`).test(a));
-
-export const getNamedArgumentValue = (name) => {
-  const arg = process.argv.slice(2).find((a) => new RegExp(`^-{0,2}${name}=`).test(a) && !name.includes('='));
-  return arg ? arg.slice(arg.indexOf('=') + 1).replace(/^"|"$/g, '') : undefined;
+/**
+Get command line argument value by name, or undefined if not found.
+Formats: `--name=value`, `-name=value`, `name=value`, `--name value`, `-name value`, `name`.
+@param {string} name
+*/
+export const getArgumentValue = (name, args = process.argv.slice(2)) => {
+  let arg = args.find((a) => new RegExp(`^-{0,2}${name}=`).test(a) && !name.includes('='));
+  if (arg) return arg.slice(arg.indexOf('=') + 1).replace(/^"|"$/g, '');
+  let argi = args.findIndex((a) => new RegExp(`^-{1,2}${name}$`).test(a));
+  if (argi > -1) return argi < args.length - 1 && !args[argi + 1].startsWith('-') ? args[argi + 1] : '';
+  return args.includes(name) ? name : undefined;
 };
 
 /** Test functionality: */

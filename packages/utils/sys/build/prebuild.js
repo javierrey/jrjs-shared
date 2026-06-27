@@ -2,16 +2,16 @@
 // @ts-check
 
 import {
-  getNamedArgumentValue, hasNamedArgument, copyDir, symlinkDir,
+  getArgumentValue, copyDir, symlinkDir,
 } from '../../../lib/sys/sys.js';
 
 const origBase = './node_modules/jrjs-shared/packages';
 const destBase = './packages';
 
-const method = hasNamedArgument('symlink') ? symlinkDir : copyDir; // copy, symlink
+const method = getArgumentValue('symlink') ? symlinkDir : copyDir; // copy, symlink
 
-const importsCore = getNamedArgumentValue('imports-core')?.split(',').filter(Boolean) ?? [];
-const importsView = getNamedArgumentValue('imports-view')?.split(',').filter(Boolean) ?? [];
+const importsCore = getArgumentValue('imports-core')?.split(',').filter(Boolean) ?? [];
+const importsView = getArgumentValue('imports-view')?.split(',').filter(Boolean) ?? [];
 
 method(origBase + '/lib/core', destBase + '/view/lib/core');
 method(origBase + '/lib/view', destBase + '/view/lib/view');
