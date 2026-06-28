@@ -21,6 +21,9 @@ export const gt = (tag, el = document) => el?.getElementsByTagName?.(tag);
 export const qs = (sel, el = document) => { try { return el?.querySelector?.(sel); } catch {} };
 export const qa = (sel, el = document) => { try { return el?.querySelectorAll?.(sel); } catch {} };
 
+/** Call function `ready` when document body is present. */
+export const documentReady = (ready) => (function test() { document.body ? ready() : setTimeout(test, 50); })();
+
 /**
 Loads CSS code from a URL `href`, or from a given text, if `code` is not null.
 The `href` is also used to construct the element's `id` and replace the style
