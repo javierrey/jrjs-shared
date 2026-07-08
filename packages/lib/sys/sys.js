@@ -1,5 +1,5 @@
 // lib/.../sys.js, NodeJS
-// @ts-check
+// _@ts-check
 
 /**
 @typedef {import('../core/core.js').PlainObject} PlainObject;

@@ -3,6 +3,17 @@ jrjs-shared-code.txt
 ----------------------------------------------------------
 ----------------------------------------------------------
 ----------------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+
+/** Maximum arguments accepted by functions. Test optionally constrained. */
+const maxArgs = (min = 0, max = Number.MAX_SAFE_INTEGER) => {
+  const ar = Array(min).fill(0), fn = () => {};
+  try { while (ar.length < max) fn(...ar), ar.push(0); } catch { ar.pop(); }
+  return ar.length;
+};
+
+----------------------------------------------------------
 hydrate:
 -----------------------------------
 -----------------------------------
@@ -141,6 +152,19 @@ const resolveRoute = (request, urlParts, props) => {
   );
   return route;
 };
+
+----------------------------------------------------------
+
+/**
+Call function `run` when document body is present.
+Equivalent to self-invoking ready function here:
+```
+(function ready(...args) {
+  if (!document.body) return setTimeout(ready, 50, ...args); // ready:
+})();
+```
+*/
+export const documentReady = (run) => when(() => document.body, run);
 
 ----------------------------------------------------------
 // sys/run.js

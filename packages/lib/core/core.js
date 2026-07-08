@@ -40,7 +40,7 @@ export const isXml = (v) => /^\s*</.test(v) && />\s*$/.test(v);
 export const isJso = (v) => /^\s*\[?\s*\{/.test(v) && /\}\s*\]?\s*$/.test(v);
 export const isBuf = (v) => typeof v?.slice === 'function' && 'byteLength' in v;
 export const isKey = (v) =>
-  (Number.isInteger(v) && v > -1) || (typeof v === 'string' && v.length < 1025 && !/\s/.test(v));
+  Number.isInteger(v) && v > -1 || typeof v === 'string' && v.length > 0 && v.length < 1025 && !/\s/.test(v);
 
 export const toNum = (v) =>
   [Number, Boolean, Date].includes(v?.constructor) ? +v : parseFloat(v) === (v = Number(v)) ? v : NaN;
@@ -50,7 +50,7 @@ export const toSam = (v) => {
   return 'byteLength' in s ? new TextDecoder().decode(s) : s;
 };
 
-export const isTra = (v) => isObj(v) || !!v?.every?.(isObj); // isObj(v?.[0]) // && isObj(v.at(-1))
+export const isTra = (v) => isObj(v) || !!v?.length && v.every(isObj); // isObj(v?.[0]) && isObj(v.at(-1))
 export const isBin = (v) => toSam(v).includes('\x00');
 
 export const toSca = (v) => {
@@ -100,18 +100,17 @@ export const Log = (config = {}) => {
   const METHODS = ['log', 'error', 'warn', 'info', 'debug'], DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   config = typeof config === 'string' ? { name: config } : typeof config === 'number' ? { level: config } : config;
   config = Object.seal({ name: '', level: 3, trace: 0, pretty: 0, limit: 1e4, redact: ['pass', 'auth'], ...config });
+  const redactStr = `(${config.redact.join('|')})`, redactRE = new RegExp(`(^|[-_.])${redactStr}`, 'i');
+  const jsonRedactRE = new RegExp(`["-_.]${redactStr}.*":`, 'i'), formatCharsRE = /(?:\\[\\ntfv])+/g;
   const isStr = (v) => v?.constructor === String;
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => (isObj(v) || !!v?.every?.(isObj)) && v !== globalThis;
-  const redact = (o, k) => config.redact.some((r) => new RegExp(`(^|[-_.])${r}`, 'i').test(k)) && (o[k] = '*');
+  const isTra = (v) => v !== globalThis && isObj(v) || !!v?.length && v.every(isObj);
+  const redact = (o, k) => redactRE.test(k) && (o[k] = '*');
   const trav = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? trav(v) : isStr(v) && redact(o, k));
   const print = (t) => {
     if (isTra(t)) {
-      try {
-        const s = JSON.stringify(t);
-        if (config.redact.some((r) => new RegExp(`["-_.]${r}.*":`, 'i').test(s))) { t = JSON.parse(s); }
-      } catch {}
-      trav(t); if (config.pretty) try { t = JSON.stringify(t, null, 2).replace(/(?:\\[\\ntfv])+/g, ' '); } catch {}
+      try { const s = JSON.stringify(t); if (jsonRedactRE.test(s)) t = JSON.parse(s); } catch {}
+      trav(t); if (config.pretty) try { t = JSON.stringify(t, null, 2).replace(formatCharsRE, ' '); } catch {}
     }
     if (config.limit && isStr(t?.[0])) {
       if (!isStr(t)) { t = `[${t}]`; }
@@ -369,7 +368,7 @@ export const partial = (obj, flt) => {
 /** Clones a plain object or array recursively. Non-plain object properties are assigned by reference. */
 export const clone = (obj) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => (isObj(v) || !!v?.every?.(isObj)) && v !== globalThis;
+  const isTra = (v) => v !== globalThis && isObj(v) || !!v?.length && v.every(isObj);
   const map = (v) => typeof v?.slice === 'function' && !v.substring ? v.slice() : v;
   if (!isTra(obj)) { return map(obj); }
   const emp = (v) => typeof v?.join === 'function' ? [] : {};
@@ -385,7 +384,7 @@ export const clone = (obj) => {
 /** Remaps a plain object or array recursively calling a mapping function on each non-traversable property. */
 export const remap = (obj, map) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => (isObj(v) || !!v?.every?.(isObj)) && v !== globalThis;
+  const isTra = (v) => v !== globalThis && isObj(v) || !!v?.length && v.every(isObj);
   const travel = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? travel(v) : map(o, k, obj));
   map instanceof Function && isTra(obj) && travel(obj);
   return obj;
@@ -395,7 +394,7 @@ export const remap = (obj, map) => {
 export const merge = (tgt, ...srcs) => {
   const set = (o, k, v) => { v === undefined ? delete o[k] : (o[k] = v); };
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const travs = (o, k, v) => isObj(o[k]) && isObj(v) && v !== globalThis;
+  const travs = (o, k, v) => v !== globalThis && isObj(v) && isObj(o[k]);
   const travel = (t, s) => s !== t && Object.entries(s)
     .forEach(([k, v]) => travs(t, k, v) ? travel(t[k], v) : set(t, k, v));
   tgt = Object.assign(tgt ?? {});
@@ -445,7 +444,7 @@ Compares two type objects by matching one or more nested properties.
 `matchObjects(objA, objB, ['fields', 'name', 'en-US'], ['contentType', 'sys', 'id'])`
 */
 export const matchObjects = (a, b, ...fields) =>
-  a === b || fields.length && fields.every((field) => getProperty(a, ...field) === getProperty(b, ...field));
+  a === b || !!fields.length && fields.every((field) => getProperty(a, ...field) === getProperty(b, ...field));
 
 /**
 Finds the index of an object in an array by matching one or more nested properties.
@@ -512,7 +511,7 @@ If `JSON.parse` fails, `parseKey` is called, along with `ctx` and `dot` paramete
 */
 export const parseValue = (value, ctx, dot) => {
   if (typeof value === 'string') {
-    if ((!isNaN(Number(value)) && value.trim()) || value === 'NaN') { return Number(value); }
+    if (!isNaN(Number(value)) && value.trim() || value === 'NaN') { return Number(value); }
     if (isJso(value)) try { return JSON.parse(value); } catch {}
     if (isKey(value)) { return parseKey(value, ctx, dot) ?? value; }
   }
@@ -671,7 +670,7 @@ export const getEnvironment = () => {
   return env;
 };
 
-/** Dynamically import a module returning its default export or a JSON file if type is 'json'. */
+/** Import a module dynamically, returning its default export, optionally a JSON file if type is 'json'. */
 export const importFile = async (url, type) => (await (type ? import(url, { with: { type } }) : import(url))).default;
 
 /**
@@ -679,19 +678,24 @@ Delays execution for the given milliseconds, passing optional arguments to the p
 `delay(2e3, ['a1', 'a2']).then((a) => console.log(a));`
 `(async () => console.log(await delay(1e3, ['a1', 'a2'])))();`
 */
-export const delay = (ms, args) => new Promise((rs) => setTimeout(() => rs(args), ms));
+export const delay = (ms, args) => new Promise((rs) => setTimeout(rs, ms, args));
+
+/** Calls a function when a condition is met. @param {Function} ready @param {Function} run */
+export const when = (ready, run) => {
+  const t = Date.now() + 50e3, f = () => { if (ready()) run(); else Date.now() < t && setTimeout(f, 50); }; f();
+};
 
 /**
 Holds a promise resolution until a stateful condition is ready.
-@param {{ (): boolean; timeout: number; gap: number; ease: number } | Record<string, unknown>} ready:
+@param {{ (): boolean; timeout: number; gap: number; ease: number } | Record<string, unknown>} state:
 A stateful object or function to test the ready condition.
 @param {unknown[]} args: Optional arguments array passed to the resolve method.
 @return: A promise that resolves when the ready condition is met, or rejects on error or timeout.
-An async-await call to `when` returns the resolved or rejected output.
-If parameter `ready` is a function, its return value as boolean determines the ready state.
-If `ready` is a stateful object, the state is determined by its property `pending`, being false,
+An async-await call to `waitFor` returns the resolved or rejected output.
+If parameter `state` is a function, its return value as boolean determines the ready state.
+If `state` is a stateful object, the state is determined by its property `pending`, being false,
 or property `done`, being true, or property `progress`, being 1 (not lower than 1).
-Some optional control properties can be attached to the `ready` function or object:
+Some optional control properties can be attached to the `state` function or object:
 Property `timeout`, 50e3 ms by default, will reject the promise if it has not been resolved before.
 If `timeout` is defined as zero or less, the promise resolves or rejects immediately.
 Property `gap`, 50 ms by default, determines the tests rate.
@@ -700,25 +704,25 @@ progressively eased out, starting at the initial interval.
 If `ease` is defined as zero or lower than the initial `gap`, the rate remains constant.
 Usage example (using a stateful object):
 ```
-const ready = { pending: 0, timeout: 2e3, gap: 50, ease: 200, result: [], throw: false };
-const stayBusy = (ms) => ++ready.pending && setTimeout(() => ready.pending--, ms);
+const state = { pending: 0, timeout: 2e3, gap: 50, ease: 200, result: [], throw: false };
+const stayBusy = (ms) => ++state.pending && setTimeout(() => state.pending--, ms);
 (async () => {
-  stayBusy(1e3); // logs [1, 2, 3] or [1, 2, <Error>] if ready.throw is true
-  console.log('await when:', await when(ready, [1])
-    .then((ar) => { stayBusy(1e3); ready.result = ar.concat(2); return when(ready, ready.result); })
-    .then((ar) => { if (ready.throw) throw new Error('Thrown'); else return (ready.result = ar.concat(3)); })
-    .catch((er) => (ready.result = ready.result.concat(er)))
-    .finally(() => console.log('finally', ready.result))
+  stayBusy(1e3); // logs [1, 2, 3] or [1, 2, <Error>] if state.throw is true
+  console.log('await waitFor:', await waitFor(state, [1])
+    .then((ar) => { stayBusy(1e3); state.result = ar.concat(2); return waitFor(state, state.result); })
+    .then((ar) => { if (state.throw) throw new Error('Thrown'); else return (state.result = ar.concat(3)); })
+    .catch((er) => (state.result = state.result.concat(er)))
+    .finally(() => console.log('finally', state.result))
   );
 })();
 ```
 */
-export const when = (ready, args) => new Promise((resolve, reject) => {
-  const test = typeof ready === 'function' ? ready
-    : () => !(ready?.pending ?? +(ready?.done ?? ready?.progress ?? 1) < 1);
-  let timeout = Number(ready?.timeout ?? 50e3);
-  const min = Math.max(0, ~~Number(ready?.gap ?? 50));
-  const max = Math.max(min, ~~Number(ready?.ease ?? timeout / 10));
+export const waitFor = (state, args) => new Promise((resolve, reject) => {
+  const test = typeof state === 'function' ? state
+    : () => !(state?.pending ?? +(state?.done ?? state?.progress ?? 1) < 1);
+  let timeout = Number(state?.timeout ?? 50e3);
+  const min = Math.max(0, ~~Number(state?.gap ?? 50));
+  const max = Math.max(min, ~~Number(state?.ease ?? timeout / 10));
   const grow = max > min ? 1.2 : 1;
   const timer = (lap = min) => {
     const ok = test();
@@ -733,8 +737,8 @@ export const when = (ready, args) => new Promise((resolve, reject) => {
 
 /**
 Debounces concurrent event triggers in favor of the last dispatch, or the first one, if lead is true.
-Param delay. The interval threshold below which the dispatch is postponed. The default value is 300 ms.
-Param fun. The callback function to be invoked.
+@param {Function} fun The callback function to be invoked.
+@param {number} delay The interval threshold below which the dispatch is postponed. The default value is 300 ms.
 Example: element.onresize = debounce((ev) => {...});
 */
 export const debounce = (fun, delay = 300, lead = false) => {
@@ -748,8 +752,8 @@ export const debounce = (fun, delay = 300, lead = false) => {
 
 /**
 Throttles concurrent event triggers below a frequency interval.
-Param delay. The frequency threshold below which the dispatch is skipped. The default value is 300 ms.
-Param fun. The callback function to be invoked.
+@param {Function} fun The callback function to be invoked.
+@param {number} delay The frequency threshold below which the dispatch is skipped. The default value is 300 ms.
 Example: element.onresize = throttle((ev) => {...});
 */
 export const throttle = (fun, delay = 300) => {

@@ -35,6 +35,7 @@ yarn.lock
 ehthumbs.db
 
 !/.github/
+!/.specify/
 !.storybook/
 
 !/packages/imports/**

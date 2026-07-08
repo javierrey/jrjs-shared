@@ -7,7 +7,7 @@
 */
 
 import {
-  log,
+  log, when,
 } from '../core/core.js';
 
 export * from '../core/core.js';
@@ -20,17 +20,6 @@ export const ge = (id) => document.getElementById(id);
 export const gt = (tag, el = document) => el?.getElementsByTagName?.(tag);
 export const qs = (sel, el = document) => { try { return el?.querySelector?.(sel); } catch {} };
 export const qa = (sel, el = document) => { try { return el?.querySelectorAll?.(sel); } catch {} };
-
-/**
-Call function `ready` when document body is present.
-Equivalent to self-invoking ready function:
-```
-(function ready(...args) {
-  if (!document.body) return setTimeout(ready, 50, ...args); // ready:
-})();
-```
-*/
-export const documentReady = (ready) => document.body ? ready() : setTimeout(documentReady, 50, ready);
 
 /**
 Loads CSS code from a URL `href`, or from a given text, if `code` is not null.

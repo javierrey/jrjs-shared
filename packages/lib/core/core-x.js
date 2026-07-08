@@ -6,7 +6,7 @@
 */
 
 import {
-  isBin, isTra, toEmp, toSca, toStr, REX as REX_base,
+  isBin, isTra, toEmp, toSca, toStr, REX,
 } from './core.js';
 
 export * from './core.js';
@@ -36,8 +36,10 @@ export const getSample = (content, size, info) => {
 
 /* String and RegExp transformations: */
 
-/** Extends REX definition, replacing imported base core.REX. */
-export const REX = (() => {
+/** Extends REX definition. */
+export const REX_X = (() => {
+  const typename = 'REX_X';
+
   /** RegExp for a decimal number. */
   const DECIMAL_NUMBER_RE = /[+-]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][+-]?\d+)?/g;
 
@@ -57,14 +59,14 @@ export const REX = (() => {
 
   /** constructor method */
   const main = (text) => Object.freeze({
-    ...REX_base(text),
+    ...REX(text),
     trimLines: () => trimLines(text),
     removeEmptySpaces: () => removeEmptySpaces(text),
   });
 
   /** public static members */
   const members = {
-    ...REX_base,
+    ...REX, typename,
     DECIMAL_NUMBER_RE, getDecimalNumberInContextRE,
     // Also implemented in instance version:
     trimLines, removeEmptySpaces,
@@ -95,7 +97,7 @@ To create a shallow copy of the source object, use `Object.assign` instead.
 */
 export const customClone = (opt, obj) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => isObj(v) || !!v?.every?.(isObj);
+  const isTra = (v) => isObj(v) || !!v?.length && v.every(isObj);
   const map = (v) => typeof v?.slice === 'function' && !v.substring ? v.slice() : v;
   if (!isTra(obj)) { return map(obj); }
   const x = {
@@ -123,7 +125,7 @@ To prevent the mutation of the orignal object, use a clone: `customRemap(null, c
 */
 export const customRemap = (opt, obj, map) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => isObj(v) || !!v?.every?.(isObj);
+  const isTra = (v) => isObj(v) || !!v?.length && v.every(isObj);
   const x = {
     keys: new Set(opt?.filter((v) => v?.constructor === String) || []),
     refs: new WeakSet(opt?.filter((v) => isTra(v)) || []),
