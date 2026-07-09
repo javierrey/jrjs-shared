@@ -50,7 +50,7 @@ export const toSam = (v) => {
   return 'byteLength' in s ? new TextDecoder().decode(s) : s;
 };
 
-export const isTra = (v) => isObj(v) || !!v?.length && v.every(isObj); // isObj(v?.[0]) && isObj(v.at(-1))
+export const isTra = (v) => isObj(v) || !!(v?.every?.(isObj) && v.length); // isObj(v?.[0]) && isObj(v.at(-1))
 export const isBin = (v) => toSam(v).includes('\x00');
 
 export const toSca = (v) => {
@@ -104,7 +104,7 @@ export const Log = (config = {}) => {
   const jsonRedactRE = new RegExp(`["-_.]${redactStr}.*":`, 'i'), formatCharsRE = /(?:\\[\\ntfv])+/g;
   const isStr = (v) => v?.constructor === String;
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => v !== globalThis && isObj(v) || !!v?.length && v.every(isObj);
+  const isTra = (v) => v !== globalThis && isObj(v) || !!(v?.every?.(isObj) && v.length);
   const redact = (o, k) => redactRE.test(k) && (o[k] = '*');
   const trav = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? trav(v) : isStr(v) && redact(o, k));
   const print = (t) => {
@@ -368,7 +368,7 @@ export const partial = (obj, flt) => {
 /** Clones a plain object or array recursively. Non-plain object properties are assigned by reference. */
 export const clone = (obj) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => v !== globalThis && isObj(v) || !!v?.length && v.every(isObj);
+  const isTra = (v) => v !== globalThis && isObj(v) || !!(v?.every?.(isObj) && v.length);
   const map = (v) => typeof v?.slice === 'function' && !v.substring ? v.slice() : v;
   if (!isTra(obj)) { return map(obj); }
   const emp = (v) => typeof v?.join === 'function' ? [] : {};
@@ -384,7 +384,7 @@ export const clone = (obj) => {
 /** Remaps a plain object or array recursively calling a mapping function on each non-traversable property. */
 export const remap = (obj, map) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => v !== globalThis && isObj(v) || !!v?.length && v.every(isObj);
+  const isTra = (v) => v !== globalThis && isObj(v) || !!(v?.every?.(isObj) && v.length);
   const travel = (o) => Object.entries(o).forEach(([k, v]) => isTra(v) ? travel(v) : map(o, k, obj));
   map instanceof Function && isTra(obj) && travel(obj);
   return obj;
@@ -444,7 +444,7 @@ Compares two type objects by matching one or more nested properties.
 `matchObjects(objA, objB, ['fields', 'name', 'en-US'], ['contentType', 'sys', 'id'])`
 */
 export const matchObjects = (a, b, ...fields) =>
-  a === b || !!fields.length && fields.every((field) => getProperty(a, ...field) === getProperty(b, ...field));
+  a === b || fields.every((field) => getProperty(a, ...field) === getProperty(b, ...field)) && !!fields.length;
 
 /**
 Finds the index of an object in an array by matching one or more nested properties.

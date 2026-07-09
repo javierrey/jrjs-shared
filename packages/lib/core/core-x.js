@@ -97,7 +97,7 @@ To create a shallow copy of the source object, use `Object.assign` instead.
 */
 export const customClone = (opt, obj) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => isObj(v) || !!v?.length && v.every(isObj);
+  const isTra = (v) => isObj(v) || !!(v?.every?.(isObj) && v.length);
   const map = (v) => typeof v?.slice === 'function' && !v.substring ? v.slice() : v;
   if (!isTra(obj)) { return map(obj); }
   const x = {
@@ -125,7 +125,7 @@ To prevent the mutation of the orignal object, use a clone: `customRemap(null, c
 */
 export const customRemap = (opt, obj, map) => {
   const isObj = (v) => !!v && [Object, undefined].includes(v.constructor);
-  const isTra = (v) => isObj(v) || !!v?.length && v.every(isObj);
+  const isTra = (v) => isObj(v) || !!(v?.every?.(isObj) && v.length);
   const x = {
     keys: new Set(opt?.filter((v) => v?.constructor === String) || []),
     refs: new WeakSet(opt?.filter((v) => isTra(v)) || []),
