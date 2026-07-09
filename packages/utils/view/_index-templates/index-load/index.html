@@ -129,7 +129,7 @@
           + '</tbody></table>';
       },
       task = (p, t) => {
-        const m = /^\[( |x|X)\]\s+([\s\S]*)$/.exec(t);
+        const m = /^ *\[( |x|X)\]\s+([\s\S]*)$/.exec(t);
         if (m && p.startsWith('>')) { p = ' style="list-style:none;padding-left:1rem;"' + p; }
         return m ? p + '<input type="checkbox" disabled style="cursor:default;"'
           + (m[1].trim() ? ' checked' : '') + '/> ' + m[2] : p + t;
