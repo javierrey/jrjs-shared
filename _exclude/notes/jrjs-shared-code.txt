@@ -156,6 +156,77 @@ const resolveRoute = (request, urlParts, props) => {
 ----------------------------------------------------------
 
 /**
+Holds a promise resolution until a stateful condition is ready.
+@param {{ (): boolean; timeout: number; gap: number; ease: number } | Record<string, unknown>} state:
+A stateful object or function to test the ready condition.
+@param {unknown[]} args: Optional arguments array passed to the resolve method.
+@return: A promise that resolves when the ready condition is met, or rejects on error or timeout.
+An async-await call to `waitFor` returns the resolved or rejected output.
+If parameter `state` is a function, its return value as boolean determines the ready state.
+If `state` is a stateful object, the state is determined by its property `pending`, being false,
+or property `done`, being true, or property `progress`, being 1 (not lower than 1).
+Some optional control properties can be attached to the `state` function or object:
+Property `timeout`, 50e3 ms by default, will reject the promise if it has not been resolved before.
+If `timeout` is defined as zero or less, the promise resolves or rejects immediately.
+Property `gap`, 50 ms by default, determines the tests rate.
+Property `ease`, 10% of `timeout` by default, defines a maximum gap, so the tests rate will be
+progressively eased out, starting at the initial interval.
+If `ease` is defined as zero or lower than the initial `gap`, the rate remains constant.
+Usage example (using a stateful object):
+```
+const state = { pending: 0, timeout: 2e3, gap: 50, ease: 200, result: [], throw: false };
+const stayBusy = (ms) => ++state.pending && setTimeout(() => state.pending--, ms);
+(async () => {
+  stayBusy(1e3); // logs [1, 2, 3] or [1, 2, <Error>] if state.throw is true
+  console.log('await waitFor:', await waitFor(state, [1])
+    .then((ar) => { stayBusy(1e3); state.result = ar.concat(2); return waitFor(state, state.result); })
+    .then((ar) => { if (state.throw) throw new Error('Thrown'); else return (state.result = ar.concat(3)); })
+    .catch((er) => (state.result = state.result.concat(er)))
+    .finally(() => console.log('finally', state.result))
+  );
+})();
+```
+*/
+export const waitFor = (state, args) => new Promise((resolve, reject) => {
+  const test = typeof state === 'function' ? state
+    : () => !(state?.pending ?? +(state?.done ?? state?.progress ?? 1) < 1);
+  let timeout = Number(state?.timeout ?? 50e3);
+  const min = Math.max(0, ~~Number(state?.gap ?? 50));
+  const max = Math.max(min, ~~Number(state?.ease ?? timeout / 10));
+  const grow = max > min ? 1.2 : 1;
+  const timer = (lap = min) => {
+    const ok = test();
+    if (!ok && timeout > 0) {
+      if (timeout < lap) { lap = timeout; }
+      timeout -= lap; return setTimeout(timer, lap, ~~Math.min(max, lap * grow));
+    }
+    return ok ? resolve(args) : reject(new Error('Timeout'));
+  };
+  return timer();
+});
+
+-------------------------------
+
+/**
+Delays a function call. @param {number} ms @param {Function} run
+`delay(2e3, () => 'run').then((a) => console.log(a));`
+`(async () => console.log(await delay(2e3, () => 'run')))();`
+*/
+export const delay = (ms, run) => new Promise((s) => setTimeout(() => s(run()), ms));
+
+/**
+Calls a function when a condition is met. @param {Function} ready @param {Function} run
+`when(() => globalThis.done, () => 'run').then((a) => console.log(a));`
+`(async () => console.log(await when(() => globalThis.done, () => 'run')))();`
+*/
+export const when = (ready, run) => new Promise((s) => {
+  let l = 50; const t = Date.now() + l * 1e3;
+  (function f() { if (ready()) s(run()); else if (Date.now() > t) s(); else setTimeout(f, l *= 1.2); })();
+});
+
+-------------------------------
+
+/**
 Call function `run` when document body is present.
 Equivalent to self-invoking ready function here:
 ```
@@ -202,7 +273,8 @@ document.adoptedStyleSheets.push(viewX_css);
 ---------------------------------
 
 /** Dynamically import a module returning its default export or a JSON file if type is 'json'. */
-export const importFile = async (url, type) => (await (type ? import(url, { with: { type } }) : import(url))).default;
+export const importModule = async (url, type) =>
+  (await (type ? import(url, { with: { type } }) : import(url))).default;
 
 ----------------------------------------------------------
 // sys.js, original:

@@ -244,19 +244,9 @@ export const assignReadonly = (t, s) => Object.entries(s).forEach(([k, v]) =>
 
 /* Arrays and iterables: */
 
-/* Flow and event functionality: */
+/* URL and path functionality: */
 
-/** Clear timeouts and/or intervals. */
-export const clearTimeouts = (timeouts = true, intervals = true, ...except) => {
-  let tid = 1 + (+setTimeout(() => {}));
-  while (tid--) {
-    const include = !except.includes(tid);
-    timeouts && include && clearTimeout(tid);
-    intervals && include && clearInterval(tid);
-  }
-};
-
-/* Client string functionality: */
+/* Content string functionality: */
 
 /** Appends content to an HTML string container and returns the result string. */
 export const appendHTML = (content, parent, tag) => {
@@ -270,91 +260,17 @@ export const appendHTML = (content, parent, tag) => {
   return parent.slice(0, end) + content + parent.slice(end);
 };
 
-/**
-Convert MD content into HTML.
-Supports lists, code blocks and inline HTML with CSS styles and media resources.
-*/
-export const mdToHtml = (() => {
-  let inCode = 0; const HD = 16, CH = '\\[!]#{()}*+-._',
-  SE ='script|style|pre|code', SE0 = new RegExp(`<(${SE})[ >]`, 'i'), SE1 = new RegExp(`<\\/(${SE})>`, 'i'),
-  RE1 = /^\s{0,3}(\#{1,6})\s+(.*?)\s*#*\s*$/, RE2 = /^\s*<[^>]+(?:>\s*<)?[^>]+>\s*$/,
-  RE3 = /^(\s*)(?:[-*]|(\d+[.)])) (.+)$/, RE4 = /^\s{0,3}([-])(\s*\1){2,}\s*$/,
-  RE5 = /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/,
-  start = (t) => t.replace(/\\([-(){}[\]#*+.!_\\])/g,
-    (_a, b, _c, d) => String.fromCharCode(1, CH.indexOf(b) + d)
-  ).replace(/(\*\*|__|~~)(\S(?:[\s\S]*?\S)?)\1/g,
-    (_a, b, c) => '~~' === b ? '<del>' + c + '</del>' : '<b>' + c + '</b>'
-  ).replace(/(^|\W)([_*])(\S(?:[\s\S]*?\S)?)\2(\W|$)/g,
-    (_a, b, _c, d, e) => b + '<i>' + d + '</i>' + e
-  ).replace(/(!?)\[([^\]<>]+)\]\((\+?)([^ )<>]+)(?: "([^()"]+)")?\)/g, (_a, b, c, d, e, f) => {
-    let h = f ? ' title="' + f + '"' : '';
-    return b ? '<img src="' + main.href(e) + '" alt="' + c + '"' + h + '/>' : (d && (h += ' target="_blank"'),
-      '<a href="' + main.href(e) + '"' + h + '>' + c + '</a>');
-  }),
-  finish = (t) => t.replace(/\x01([\x0f-\x1c])/g, (_a, b) => CH[b.charCodeAt(0) - HD])
-    .replace(/<p>\s*(?=<\/)(?!<\/p>)/gi, ''),
-  split = (t) => t.replace(/\\\|/g, '\x00').replace(/^\s*\||\|\s*$/g, '').split('|')
-    .map((a) => a.trim().replace(/\x00/g, '|')),
-  table = (t) => {
-    const h = split(t[0]), b = t.slice(2).map(split), c = (a, d) => `<${a}>` + finish(start(d)) + `</${a}>`;
-    return '<table><thead><tr>' + h.map((a) => c('th', a)).join('') + '</tr></thead>'
-      + '<tbody>' + b.map((a) => '<tr>' + a.map((d) => c('td', d)).join('') + '</tr>').join('')
-      + '</tbody></table>';
-  },
-  task = (p, t) => {
-    const m = /^ *\[( |x|X)\]\s+([\s\S]*)$/.exec(t);
-    if (m && p.startsWith('>')) { p = ' style="list-style:none;padding-left:1rem;"' + p; }
-    return m ? p + '<input type="checkbox" disabled style="cursor:default;"'
-      + (m[1].trim() ? ' checked' : '') + '/> ' + m[2] : p + t;
-  },
-  main = (t) => (t || '').replace(/\r\n?/g, '\n').replace(/.+(?:\n.+)*/g, (a) => {
-    const s0 = SE0.test(a), s1 = SE1.test(a); if (s1) inCode = 0; else if (s0) inCode = 1;
-    const g = []; let d = null;
-    if (inCode) {
-      if (/^\s*```\s*$/.test(a)) return inCode = 0, '</code></pre>';
-      d = /^([\s\S]*?)\n\s*```\s*$/.exec(a);
-      return d ? (inCode = 0, d[1] + '</code></pre>') : a.replace(/<\/?p>/gi, '');
-    } else {
-      if (d = /^\s*```[^\n]*\n([\s\S]*?)\n\s*```\s*$/.exec(a)) return '<pre><code>' + d[1] + '</code></pre>';
-      if (d = /^\s*```[^\n]*(?:\n([\s\S]*))?$/.exec(a)) return inCode = 1, '<pre><code>' + (d[1] ?? '');
-    }
-    if (!inCode && !s0) a = a.replace(/(`)([^`]*)\1/g, '<code>$2</code>');
-    for (let f, h = start(a).split('\n'), i = 0; i < h.length; i++) {
-      const k = h[i], u = RE2.test(k), p = u || inCode || (s0 && s1) ? '' : 'p'; let m = RE1.exec(k);
-      if (!m) {
-        if (/\|/.test(k) && RE5.test(h[i + 1] ?? '')) {
-          const j = [k, h[++i]];
-          while (/\|/.test(h[i + 1] ?? '')) j.push(h[++i]);
-          g.push(f = [table(j), '', '']);
-        } else (m = RE3.exec(k)) ? g.push(f = [m[3], m[2] ? 'ol' : 'ul', m[1].length])
-          : RE4.test(k) ? g.push(f = ['', 'hr']) : f && 'hr' !== f[1] && 'h' !== f[1] ? f[0] += '\n' + k
-          : g.push(f = [k, p, '']);
-      } else { g.push(f = [m[2], 'h', m[1].length]); }
-    }
-    const o = []; let n = '';
-    for (let i = 0; i < g.length; i++) {
-      const f = g[i], q = f[0], r = f[1], s = f[2];
-      if ('ul' === r || 'ol' === r) {
-        while (o.length && s < o.at(-1)[1]) n += '</li></' + o.pop()[0] + '>';
-        if (!o.length || s > o.at(-1)[1]) { o.push([r, s]); n += '<' + r + task('><li>', q);
-        } else if (r !== o.at(-1)[0]) {
-          n += '</li></' + o.pop()[0] + '>'; o.push([r, s]); n += '<' + r + task('><li>', q);
-        } else n += '</li><li>' + task('', q);
-      } else {
-        while (o.length) n += '</li></' + o.pop()[0] + '>';
-        if (q?.trim()) {
-          if (r) n += 'hr' === r ? '<hr/>' : '<' + r + s + main.headAttrs(s, q) + '>' + q + '</' + r + s + '>';
-          else n += q;
-        }
-      }
-    }
-    while (o.length) n += '</li></' + o.pop()[0] + '>';
-    return finish(n);
-  });
-  return main.href = (a) => a, main.headAttrs = (_a, _b) => '', main;
-})();
-
 /* Flow and event functionality: */
+
+/** Clear timeouts and/or intervals. */
+export const clearTimeouts = (timeouts = true, intervals = true, ...except) => {
+  let tid = 1 + (+setTimeout(() => {}));
+  while (tid--) {
+    const include = !except.includes(tid);
+    timeouts && include && clearTimeout(tid);
+    intervals && include && clearInterval(tid);
+  }
+};
 
 /**
 Fetches a URL resource with options and a callback function. Returns a stateful request container.

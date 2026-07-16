@@ -564,7 +564,7 @@ export const arrayIndicesOf = (array, match, from, to, not) => {
   }, []);
 };
 
-/* URL and system path functionality: */
+/* URL and path functionality: */
 
 /** Rebases a URL from the current location base, or optionally from a custom base. */
 export const rebaseUrl = (url, base = null) =>
@@ -646,6 +646,92 @@ export const urlCore = (url) => {
   return url;
 };
 
+/* Content string functionality: */
+
+/**
+Convert MD content into HTML.
+Supports lists, code blocks and inline HTML with CSS styles and media resources.
+*/
+export const mdToHtml = (() => {
+  let inCode = 0; const HD = 16, CH = '\\[!]#{()}*+-._',
+  SE ='script|style|pre|code', SE0 = new RegExp(`<(${SE})[ >]`, 'i'), SE1 = new RegExp(`<\\/(${SE})>`, 'i'),
+  RE1 = /^\s{0,3}(\#{1,6})\s+(.*?)\s*#*\s*$/, RE2 = /^\s*<[^>]+(?:>\s*<)?[^>]+>\s*$/,
+  RE3 = /^(\s*)(?:[-*]|(\d+[.)])) (.+)$/, RE4 = /^\s{0,3}([-])(\s*\1){2,}\s*$/,
+  RE5 = /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/,
+  start = (t) => t.replace(/\\([-(){}[\]#*+.!_\\])/g,
+    (_a, b, _c, d) => String.fromCharCode(1, CH.indexOf(b) + d)
+  ).replace(/(\*\*|__|~~)(\S(?:[\s\S]*?\S)?)\1/g,
+    (_a, b, c) => '~~' === b ? '<del>' + c + '</del>' : '<b>' + c + '</b>'
+  ).replace(/(^|\W)([_*])(\S(?:[\s\S]*?\S)?)\2(\W|$)/g,
+    (_a, b, _c, d, e) => b + '<i>' + d + '</i>' + e
+  ).replace(/(!?)\[([^\]<>]+)\]\((\+?)([^ )<>]+)(?: "([^()"]+)")?\)/g, (_a, b, c, d, e, f) => {
+    let h = f ? ' title="' + f + '"' : '';
+    return b ? '<img src="' + main.href(e) + '" alt="' + c + '"' + h + '/>' : (d && (h += ' target="_blank"'),
+      '<a href="' + main.href(e) + '"' + h + '>' + c + '</a>');
+  }),
+  finish = (t) => t.replace(/\x01([\x0f-\x1c])/g, (_a, b) => CH[b.charCodeAt(0) - HD])
+    .replace(/<p>\s*(?=<\/)(?!<\/p>)/gi, ''),
+  split = (t) => t.replace(/\\\|/g, '\x00').replace(/^\s*\||\|\s*$/g, '').split('|')
+    .map((a) => a.trim().replace(/\x00/g, '|')),
+  table = (t) => {
+    const h = split(t[0]), b = t.slice(2).map(split), c = (a, d) => `<${a}>` + finish(start(d)) + `</${a}>`;
+    return '<table><thead><tr>' + h.map((a) => c('th', a)).join('') + '</tr></thead>'
+      + '<tbody>' + b.map((a) => '<tr>' + a.map((d) => c('td', d)).join('') + '</tr>').join('')
+      + '</tbody></table>';
+  },
+  task = (p, t) => {
+    const m = /^ *\[( |x|X)\]\s+([\s\S]*)$/.exec(t);
+    if (m && p.startsWith('>')) { p = ' style="list-style:none;padding-left:1rem;"' + p; }
+    return m ? p + '<input type="checkbox" disabled style="cursor:default;"'
+      + (m[1].trim() ? ' checked' : '') + '/> ' + m[2] : p + t;
+  },
+  main = (t) => (t || '').replace(/\r\n?/g, '\n').replace(/.+(?:\n.+)*/g, (a) => {
+    const s0 = SE0.test(a), s1 = SE1.test(a); if (s1) inCode = 0; else if (s0) inCode = 1;
+    const g = []; let d = null;
+    if (inCode) {
+      if (/^\s*```\s*$/.test(a)) return inCode = 0, '</code></pre>';
+      d = /^([\s\S]*?)\n\s*```\s*$/.exec(a);
+      return d ? (inCode = 0, d[1] + '</code></pre>') : a.replace(/<\/?p>/gi, '');
+    } else {
+      if (d = /^\s*```[^\n]*\n([\s\S]*?)\n\s*```\s*$/.exec(a)) return '<pre><code>' + d[1] + '</code></pre>';
+      if (d = /^\s*```[^\n]*(?:\n([\s\S]*))?$/.exec(a)) return inCode = 1, '<pre><code>' + (d[1] ?? '');
+    }
+    if (!inCode && !s0) a = a.replace(/(`)([^`]*)\1/g, '<code>$2</code>');
+    for (let f, h = start(a).split('\n'), i = 0; i < h.length; i++) {
+      const k = h[i], u = RE2.test(k), p = u || inCode || (s0 && s1) ? '' : 'p'; let m = RE1.exec(k);
+      if (!m) {
+        if (/\|/.test(k) && RE5.test(h[i + 1] ?? '')) {
+          const j = [k, h[++i]];
+          while (/\|/.test(h[i + 1] ?? '')) j.push(h[++i]);
+          g.push(f = [table(j), '', '']);
+        } else (m = RE3.exec(k)) ? g.push(f = [m[3], m[2] ? 'ol' : 'ul', m[1].length])
+          : RE4.test(k) ? g.push(f = ['', 'hr']) : f && 'hr' !== f[1] && 'h' !== f[1] ? f[0] += '\n' + k
+          : g.push(f = [k, p, '']);
+      } else { g.push(f = [m[2], 'h', m[1].length]); }
+    }
+    const o = []; let n = '';
+    for (let i = 0; i < g.length; i++) {
+      const f = g[i], q = f[0], r = f[1], s = f[2];
+      if ('ul' === r || 'ol' === r) {
+        while (o.length && s < o.at(-1)[1]) n += '</li></' + o.pop()[0] + '>';
+        if (!o.length || s > o.at(-1)[1]) { o.push([r, s]); n += '<' + r + task('><li>', q);
+        } else if (r !== o.at(-1)[0]) {
+          n += '</li></' + o.pop()[0] + '>'; o.push([r, s]); n += '<' + r + task('><li>', q);
+        } else n += '</li><li>' + task('', q);
+      } else {
+        while (o.length) n += '</li></' + o.pop()[0] + '>';
+        if (q?.trim()) {
+          if (r) n += 'hr' === r ? '<hr/>' : '<' + r + s + main.headAttrs(s, q) + '>' + q + '</' + r + s + '>';
+          else n += q;
+        }
+      }
+    }
+    while (o.length) n += '</li></' + o.pop()[0] + '>';
+    return finish(n);
+  });
+  return main.href = (a) => a, main.headAttrs = (_a, _b) => '', main;
+})();
+
 /* Flow and event functionality: */
 
 /**
@@ -670,69 +756,23 @@ export const getEnvironment = () => {
   return env;
 };
 
-/** Import a module dynamically, returning its default export, optionally a JSON file if type is 'json'. */
-export const importFile = async (url, type) => (await (type ? import(url, { with: { type } }) : import(url))).default;
+/** Import a module dynamically, returning its default export, optionally a JSON type. */
+export const importModule = async (url, type) =>
+  (await (type ? import(url, { with: { type } }) : import(url))).default;
 
 /**
-Delays execution for the given milliseconds, passing optional arguments to the promise resolver.
-`delay(2e3, ['a1', 'a2']).then((a) => console.log(a));`
-`(async () => console.log(await delay(1e3, ['a1', 'a2'])))();`
+Delays a function call. @param {number} ms @param {Function} run
+`delay(2e3, () => console.log('run'));`
 */
-export const delay = (ms, args) => new Promise((rs) => setTimeout(rs, ms, args));
-
-/** Calls a function when a condition is met. @param {Function} ready @param {Function} run */
-export const when = (ready, run) => {
-  const t = Date.now() + 50e3, f = () => { if (ready()) run(); else Date.now() < t && setTimeout(f, 50); }; f();
-};
+export const delay = (ms, run) => new Promise((s) => setTimeout(() => s(run()), ms));
 
 /**
-Holds a promise resolution until a stateful condition is ready.
-@param {{ (): boolean; timeout: number; gap: number; ease: number } | Record<string, unknown>} state:
-A stateful object or function to test the ready condition.
-@param {unknown[]} args: Optional arguments array passed to the resolve method.
-@return: A promise that resolves when the ready condition is met, or rejects on error or timeout.
-An async-await call to `waitFor` returns the resolved or rejected output.
-If parameter `state` is a function, its return value as boolean determines the ready state.
-If `state` is a stateful object, the state is determined by its property `pending`, being false,
-or property `done`, being true, or property `progress`, being 1 (not lower than 1).
-Some optional control properties can be attached to the `state` function or object:
-Property `timeout`, 50e3 ms by default, will reject the promise if it has not been resolved before.
-If `timeout` is defined as zero or less, the promise resolves or rejects immediately.
-Property `gap`, 50 ms by default, determines the tests rate.
-Property `ease`, 10% of `timeout` by default, defines a maximum gap, so the tests rate will be
-progressively eased out, starting at the initial interval.
-If `ease` is defined as zero or lower than the initial `gap`, the rate remains constant.
-Usage example (using a stateful object):
-```
-const state = { pending: 0, timeout: 2e3, gap: 50, ease: 200, result: [], throw: false };
-const stayBusy = (ms) => ++state.pending && setTimeout(() => state.pending--, ms);
-(async () => {
-  stayBusy(1e3); // logs [1, 2, 3] or [1, 2, <Error>] if state.throw is true
-  console.log('await waitFor:', await waitFor(state, [1])
-    .then((ar) => { stayBusy(1e3); state.result = ar.concat(2); return waitFor(state, state.result); })
-    .then((ar) => { if (state.throw) throw new Error('Thrown'); else return (state.result = ar.concat(3)); })
-    .catch((er) => (state.result = state.result.concat(er)))
-    .finally(() => console.log('finally', state.result))
-  );
-})();
-```
+Calls a function when a condition is met. @param {Function} ready @param {Function} run
+`when(() => globalThis.document?.body, () => console.log('run'));`
 */
-export const waitFor = (state, args) => new Promise((resolve, reject) => {
-  const test = typeof state === 'function' ? state
-    : () => !(state?.pending ?? +(state?.done ?? state?.progress ?? 1) < 1);
-  let timeout = Number(state?.timeout ?? 50e3);
-  const min = Math.max(0, ~~Number(state?.gap ?? 50));
-  const max = Math.max(min, ~~Number(state?.ease ?? timeout / 10));
-  const grow = max > min ? 1.2 : 1;
-  const timer = (lap = min) => {
-    const ok = test();
-    if (!ok && timeout > 0) {
-      if (timeout < lap) { lap = timeout; }
-      timeout -= lap; return setTimeout(timer, lap, ~~Math.min(max, lap * grow));
-    }
-    return ok ? resolve(args) : reject(new Error('Timeout'));
-  };
-  return timer();
+export const when = (ready, run) => new Promise((s) => {
+  let l = 50; const t = Date.now() + l * 1e3;
+  (function f() { if (ready()) s(run()); else if (Date.now() > t) s(); else setTimeout(f, l *= 1.2); })();
 });
 
 /**

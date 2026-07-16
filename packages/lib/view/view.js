@@ -7,7 +7,8 @@
 */
 
 import {
-  log, when,
+  callFetch,
+  log, mdToHtml, rebaseLinks, 
 } from '../core/core.js';
 
 export * from '../core/core.js';
@@ -71,6 +72,20 @@ export const insertHtml = (html, parent = null, position = null, norun = false) 
   getScripts(parent).forEach(
     (script) => !scripts.includes(script) && loadScript(script.src, script.textContent, script.type)
   );
+};
+
+/**
+Loads content from a `url` and inserts it into an HTML parent element.
+New scripts in the content are also loaded and run, unless `norun` is true.
+*/
+export const loadHtml = (url, parent = null, position = null, norun = false) => {
+  const cb = (uri, cont, err) => {
+    cont ??= '', cont = `\n<!--loadHtml "${uri}" "${cont.length}B" "${err ?? ''}"-->\n`
+      + rebaseLinks(/\.md([?#]|$)/i.test(uri) ? mdToHtml(cont) : cont, uri)
+      + `\n<!--/loadHtml-->\n`;
+    insertHtml(cont, parent, position, norun);
+  };
+  callFetch(url, cb, 'text');
 };
 
 /* * */
