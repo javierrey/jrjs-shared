@@ -760,17 +760,11 @@ export const getEnvironment = () => {
 export const importModule = async (url, type) =>
   (await (type ? import(url, { with: { type } }) : import(url))).default;
 
-/**
-Delays a function call. @param {number} ms @param {Function} run
-`delay(2e3, () => console.log('run'));`
-*/
-export const delay = (ms, run) => new Promise((s) => setTimeout(() => s(run()), ms));
+/** Delays a function call. `delay(2e3, () => console.log('run'));` */
+export const delay = (ms = 0, run = () => {}) => new Promise((s) => setTimeout(() => s(run()), ms));
 
-/**
-Calls a function when a condition is met. @param {Function} ready @param {Function} run
-`when(() => globalThis.document?.body, () => console.log('run'));`
-*/
-export const when = (ready, run) => new Promise((s) => {
+/** Calls a function when a condition is met. `when(() => globalThis.document?.body, () => console.log('run'));` */
+export const when = (ready = () => 1, run = () => {}) => new Promise((s) => {
   let l = 50; const t = Date.now() + l * 1e3;
   (function f() { if (ready()) s(run()); else if (Date.now() > t) s(); else setTimeout(f, l *= 1.2); })();
 });
