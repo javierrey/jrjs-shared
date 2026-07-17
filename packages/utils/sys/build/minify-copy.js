@@ -36,8 +36,8 @@ const minify_json = (data, options) => {
 
 const encoding = 'utf8';
 
-const srcRE = /\.(src|test|spec)\./i;
-const rawRE = /\.(raw|min)\./i;
+const srcRE = /\.(src|test|spec|assert)\./i;
+const rawRE = /\.(raw|min|bin)\./i;
 
 const htmlRE = /\.html?$/i;
 const cssRE = /\.css$/i;
